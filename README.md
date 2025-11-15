@@ -92,7 +92,6 @@ Azure-Devops-Pipeline/ (Monorepo Root)
    ```bash
    git clone <your-repo-url>
    cd Azure-Devops-Pipeline
-   # You now have access to ALL 50+ microservices!
    ```
 
 2. **Follow the Setup Guide** (⭐ START HERE)
@@ -101,24 +100,13 @@ Azure-Devops-Pipeline/ (Monorepo Root)
    code SETUP-GUIDE.md
    ```
 
-3. **Provision Infrastructure**
-   ```bash
-   # Navigate to your Terraform directory
-   cd <path-to-terraform-config>
-   
-   # Initialize and apply
-   terraform init
-   terraform plan -out=tfplan
-   terraform apply tfplan
-   ```
-
-4. **Configure Azure DevOps**
+3. **Configure Azure DevOps**
    - Create service connections (ACR, AKS for each environment)
    - Create environments (Dev, QA, Staging, Production)
    - Set up branch policies
    - Create pipelines for frontend and backend APIs
 
-5. **Test the Pipeline**
+4. **Test the Pipeline**
    - Create feature branch
    - Make changes to sample apps
    - Create PR to dev branch
@@ -132,8 +120,7 @@ Azure-Devops-Pipeline/ (Monorepo Root)
 ### ⭐ **[SETUP-GUIDE.md](SETUP-GUIDE.md)** - Complete Setup Guide (START HERE!)
 
 Everything you need in one place:
-- 🛠️ Prerequisites and verification scripts
-- ☁️ Azure infrastructure setup (AKS + ACR)
+- 🛠️ Prerequisites
 - 🔧 Azure DevOps configuration (pipelines, connections, environments)
 - 🚀 First deployment walkthrough
 - ➕ Adding new microservices
@@ -145,13 +132,13 @@ Everything you need in one place:
 
 ### Pipeline Templates
 
-- **PR Validation Template** (`templates/pr-validation-template.yml`)
+- **PR Validation Template** (`.pipeline-templates/pr-validation-template.yml`)
   - Builds solution
   - Runs unit tests
   - Validates Docker build
   - Publishes test results
 
-- **Environment Deployment Template** (`templates/environment-deployment-template.yml`)
+- **Environment Deployment Template** (`.pipeline-templates/environment-deployment-template.yml`)
   - Builds and tests code
   - Builds Docker image
   - Pushes to ACR
@@ -215,23 +202,22 @@ Developer → Feature Branch → PR to Dev → PR Validation
 
 Before deploying, update the ACR URL in the following files:
 
-1. `sample-apps/frontend-api/frontend-api-pipeline.yml` (line 42)
-2. `sample-apps/backend-api/backend-api-pipeline.yml` (line 42)
-3. `sample-apps/frontend-api/values.yaml` (line 4)
-4. `sample-apps/backend-api/values.yaml` (line 4)
+1. `services/frontend-api/azure-pipeline.yml`
+2. `services/backend-api/azure-pipeline.yml`
 
-Replace `your-acr.azurecr.io` with your actual ACR URL.
+Replace `your-acr.azurecr.io` with your actual ACR URL, or use the automated script in [SETUP-GUIDE.md](SETUP-GUIDE.md#step-6-update-configuration-files).
 
 ### Update Service Connection Names
 
-Update service connection names in the templates if yours differ:
+The default service connection names used in `.pipeline-templates/environment-deployment-template.yml` are:
 
-- `templates/environment-deployment-template.yml`
-  - Line 36: `CAIAKSDev` → Your Dev K8s connection
-  - Line 39: `CAIAKSQA` → Your QA K8s connection
-  - Line 42: `CAIAKSStaging` → Your Staging K8s connection
-  - Line 45: `cai-aks-prod` → Your Prod K8s connection
-  - Line 124: `MyCAI Microservices ACR PROD` → Your ACR connection
+- **ACR Connection:** `MyACR` (line 29)
+- **Dev K8s Connection:** `AKSDev` (line 42)
+- **QA K8s Connection:** `AKSQA` (line 45)
+- **Staging K8s Connection:** `AKSStaging` (line 48)
+- **Prod K8s Connection:** `AKSProd` (line 51)
+
+If you use different names in Azure DevOps, update them in `.pipeline-templates/environment-deployment-template.yml`.
 
 ---
 
@@ -240,7 +226,7 @@ Update service connection names in the templates if yours differ:
 ### Build and Run Frontend API
 
 ```bash
-cd sample-apps/frontend-api
+cd services/frontend-api
 
 # Restore packages
 dotnet restore
@@ -259,7 +245,7 @@ curl http://localhost:5000/api/frontend/info
 ### Build and Run Backend API
 
 ```bash
-cd sample-apps/backend-api
+cd services/backend-api
 
 # Restore packages
 dotnet restore
@@ -280,28 +266,15 @@ curl http://localhost:5000/api/backend/data
 
 ```bash
 # Frontend
-cd sample-apps/frontend-api
+cd services/frontend-api
 docker build -t frontend-api:local .
 docker run -p 8080:8080 frontend-api:local
 
 # Backend
-cd sample-apps/backend-api
+cd services/backend-api
 docker build -t backend-api:local .
 docker run -p 8081:8080 backend-api:local
 ```
-
----
-
-## 🔐 Security Considerations
-
-- **Secrets Management**: Use Azure Key Vault or Azure DevOps Secure Files
-- **Service Connections**: Use service principals with minimum required permissions
-- **Branch Protection**: Enable branch policies on all protected branches
-- **RBAC**: Implement proper RBAC in AKS clusters
-- **Network Policies**: Configure Kubernetes network policies
-- **Image Scanning**: Add container vulnerability scanning to pipeline
-
----
 
 ## 🐛 Troubleshooting
 
@@ -338,7 +311,6 @@ For detailed troubleshooting, see the [SETUP-GUIDE.md](SETUP-GUIDE.md#troublesho
 ✅ **Always use PRs** - Never push directly to protected branches  
 ✅ **Write unit tests** - Ensure tests pass before merging  
 ✅ **Test in all environments** - Don't skip environments  
-✅ **Use semantic commits** - Clear, descriptive commit messages  
 ✅ **Monitor deployments** - Watch logs during and after deployment  
 ✅ **Implement health checks** - Ensure Kubernetes can verify pod health  
 ✅ **Set resource limits** - Define CPU and memory limits  
@@ -356,24 +328,6 @@ For detailed troubleshooting, see the [SETUP-GUIDE.md](SETUP-GUIDE.md#troublesho
 4. Wait for PR validation to pass
 5. Get approval from reviewers
 6. Merge to `dev`
-
----
-
-## 📞 Support
-
-For issues or questions:
-
-1. Check the troubleshooting section in the guides
-2. Review Azure DevOps pipeline logs
-3. Check Kubernetes pod logs
-4. Review Helm release status
-5. Contact the DevOps team
-
----
-
-## 📄 License
-
-[Your License Here]
 
 ---
 
@@ -399,10 +353,7 @@ For issues or questions:
 | Container Registry | ACR integration | ✅ Implemented |
 | Orchestration | Kubernetes with Helm | ✅ Implemented |
 | Approval Gates | Production approvals | ✅ Implemented |
-| Sample Apps | Frontend & Backend APIs | ✅ Implemented |
 | Documentation | Complete setup guides | ✅ Implemented |
-| Health Checks | Kubernetes probes | ✅ Implemented |
-| Resource Management | CPU/Memory limits | ✅ Implemented |
 
 ---
 

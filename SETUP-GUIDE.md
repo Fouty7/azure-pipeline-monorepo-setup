@@ -323,7 +323,12 @@ Create these 4 environments:
 
 ### Step 6: Update Configuration Files
 
-Update the ACR URL in your service pipelines:
+#### Update ACR URL in Service Pipelines
+
+Each service pipeline needs your ACR URL configured. Update `services/frontend-api/azure-pipeline.yml` and `services/backend-api/azure-pipeline.yml`:
+
+
+(Optional)
 
 ```powershell
 # Update ACR URL automatically
@@ -338,6 +343,26 @@ git add services/*/azure-pipeline.yml
 git commit -m "Configure ACR URL for deployment"
 git push azuredevops main
 ```
+
+#### Verify Service Connection Names (Optional)
+
+The pipelines use these default service connection names:
+
+**In each service's `azure-pipeline.yml`:**
+- `acrServiceConnection: 'MyACR'` (line 43)
+- `k8sConnection: 'AKSDev'` (line 47)
+- `k8sConnection: 'AKSQA'` (line 50)
+- `k8sConnection: 'AKSStaging'` (line 53)
+- `k8sConnection: 'AKSProd'` (line 56)
+
+**In `.pipeline-templates/environment-deployment-template.yml`:**
+- Default ACR: `MyACR` (line 29)
+- Default Dev K8s: `AKSDev` (line 42)
+- Default QA K8s: `AKSQA` (line 45)
+- Default Staging K8s: `AKSStaging` (line 48)
+- Default Prod K8s: `AKSProd` (line 51)
+
+If you used different names in Step 4, update them in these files.
 
 ### Step 7: Create Pipelines
 
