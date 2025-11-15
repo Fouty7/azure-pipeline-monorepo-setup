@@ -1,0 +1,119 @@
+# Backend API Pipeline
+# Supports GitFlow deployment strategy with PR validation and branch-based deployments
+
+name: $(Date:yyyyMMdd)$(Rev:.r)
+
+# PR Validation - runs on PRs to protected branches
+pr:
+  branches:
+    include:
+    - dev
+    - qa
+    - staging
+    - main
+  paths:
+    include:
+    - sample-apps/backend-api/**
+    - refactored-pipelines/templates/**
+    - HelmCharts/plain-app-chart/**
+
+# CI/CD Trigger - runs when code is merged to these branches
+trigger:
+  branches:
+    include:
+    - dev
+    - qa
+    - staging
+    - main
+  paths:
+    include:
+    - sample-apps/backend-api/**
+    - HelmCharts/plain-app-chart/**
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  solutionName: 'BackendApi'
+  pathToSolutionFolder: 'sample-apps/backend-api'
+  buildContext: 'sample-apps/backend-api'
+  releaseName: 'backend-api'
+  serviceType: 'dotnet'
+  acrUrl: 'your-acr.azurecr.io'
+  # Determine target environment based on branch
+  ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/dev') }}:
+    targetEnvironment: 'dev'
+  ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/qa') }}:
+    targetEnvironment: 'qa'
+  ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/staging') }}:
+    targetEnvironment: 'staging'
+  ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/main') }}:
+    targetEnvironment: 'prod'
+
+stages:
+# ============================================
+# PR VALIDATION - Only runs for Pull Requests
+# ============================================
+- ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
+  - template: ../../refactored-pipelines/templates/pr-validation-template.yml
+    parameters:
+      solutionName: $(solutionName)
+      pathToSolutionFolder: $(pathToSolutionFolder)
+      buildContext: $(buildContext)
+      serviceType: $(serviceType)
+
+# ============================================
+# DEPLOYMENT - Only runs on branch merges
+# ============================================
+
+# Deploy to DEV (auto-deploy when merged to dev branch)
+- ${{ if and(ne(variables['Build.Reason'], 'PullRequest'), eq(variables['Build.SourceBranch'], 'refs/heads/dev')) }}:
+  - template: ../../refactored-pipelines/templates/environment-deployment-template.yml
+    parameters:
+      solutionName: $(solutionName)
+      pathToSolutionFolder: $(pathToSolutionFolder)
+      buildContext: $(buildContext)
+      releaseName: $(releaseName)
+      environment: 'dev'
+      serviceType: $(serviceType)
+      acrUrl: $(acrUrl)
+      requiresApproval: false
+
+# Deploy to QA (auto-deploy when merged to qa branch)
+- ${{ if and(ne(variables['Build.Reason'], 'PullRequest'), eq(variables['Build.SourceBranch'], 'refs/heads/qa')) }}:
+  - template: ../../refactored-pipelines/templates/environment-deployment-template.yml
+    parameters:
+      solutionName: $(solutionName)
+      pathToSolutionFolder: $(pathToSolutionFolder)
+      buildContext: $(buildContext)
+      releaseName: $(releaseName)
+      environment: 'qa'
+      serviceType: $(serviceType)
+      acrUrl: $(acrUrl)
+      requiresApproval: false
+
+# Deploy to STAGING (auto-deploy when merged to staging branch)
+- ${{ if and(ne(variables['Build.Reason'], 'PullRequest'), eq(variables['Build.SourceBranch'], 'refs/heads/staging')) }}:
+  - template: ../../refactored-pipelines/templates/environment-deployment-template.yml
+    parameters:
+      solutionName: $(solutionName)
+      pathToSolutionFolder: $(pathToSolutionFolder)
+      buildContext: $(buildContext)
+      releaseName: $(releaseName)
+      environment: 'staging'
+      serviceType: $(serviceType)
+      acrUrl: $(acrUrl)
+      requiresApproval: false
+
+# Deploy to PRODUCTION (requires manual approval when merged to main branch)
+- ${{ if and(ne(variables['Build.Reason'], 'PullRequest'), eq(variables['Build.SourceBranch'], 'refs/heads/main')) }}:
+  - template: ../../refactored-pipelines/templates/environment-deployment-template.yml
+    parameters:
+      solutionName: $(solutionName)
+      pathToSolutionFolder: $(pathToSolutionFolder)
+      buildContext: $(buildContext)
+      releaseName: $(releaseName)
+      environment: 'prod'
+      serviceType: $(serviceType)
+      acrUrl: $(acrUrl)
+      requiresApproval: true

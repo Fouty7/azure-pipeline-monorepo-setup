@@ -1,0 +1,132 @@
+# Backend API Pipeline - Monorepo Structure
+# Supports GitFlow deployment strategy with PR validation and branch-based deployments
+
+name: BackendAPI-$(Date:yyyyMMdd)$(Rev:.r)
+
+# PR Validation - runs on PRs to protected branches
+pr:
+  branches:
+    include:
+    - dev
+    - qa
+    - staging
+    - main
+  paths:
+    include:
+    - services/backend-api/**
+    - .pipeline-templates/**
+    - shared/helm-charts/plain-app-chart/**
+
+# CI/CD Trigger - runs when code is merged to these branches
+trigger:
+  branches:
+    include:
+    - dev
+    - qa
+    - staging
+    - main
+  paths:
+    include:
+    - services/backend-api/**
+    - shared/helm-charts/plain-app-chart/**
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  solutionName: 'BackendApi'
+  pathToSolutionFolder: 'services/backend-api'
+  buildContext: 'services/backend-api'
+  releaseName: 'backend-api'
+  serviceType: 'dotnet'
+  acrUrl: 'your-acr.azurecr.io'  # UPDATE THIS
+  acrServiceConnection: 'MyACR'  # UPDATE THIS
+  # Determine target environment based on branch
+  ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/dev') }}:
+    targetEnvironment: 'dev'
+    k8sConnection: 'AKSDev'  # UPDATE THIS
+  ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/qa') }}:
+    targetEnvironment: 'qa'
+    k8sConnection: 'AKSQA'  # UPDATE THIS
+  ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/staging') }}:
+    targetEnvironment: 'staging'
+    k8sConnection: 'AKSStaging'  # UPDATE THIS
+  ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/main') }}:
+    targetEnvironment: 'prod'
+    k8sConnection: 'AKSProd'  # UPDATE THIS
+
+stages:
+# ============================================
+# PR VALIDATION - Only runs for Pull Requests
+# ============================================
+- ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
+  - template: /.pipeline-templates/pr-validation-template.yml
+    parameters:
+      solutionName: $(solutionName)
+      pathToSolutionFolder: $(pathToSolutionFolder)
+      buildContext: $(buildContext)
+      serviceType: $(serviceType)
+
+# ============================================
+# DEPLOYMENT - Only runs on branch merges
+# ============================================
+
+# Deploy to DEV (auto-deploy when merged to dev branch)
+- ${{ if and(ne(variables['Build.Reason'], 'PullRequest'), eq(variables['Build.SourceBranch'], 'refs/heads/dev')) }}:
+  - template: /.pipeline-templates/environment-deployment-template.yml
+    parameters:
+      solutionName: $(solutionName)
+      pathToSolutionFolder: $(pathToSolutionFolder)
+      buildContext: $(buildContext)
+      releaseName: $(releaseName)
+      environment: 'dev'
+      serviceType: $(serviceType)
+      acrUrl: $(acrUrl)
+      acrServiceConnection: $(acrServiceConnection)
+      k8sServiceConnection: $(k8sConnection)
+      requiresApproval: false
+
+# Deploy to QA (auto-deploy when merged to qa branch)
+- ${{ if and(ne(variables['Build.Reason'], 'PullRequest'), eq(variables['Build.SourceBranch'], 'refs/heads/qa')) }}:
+  - template: /.pipeline-templates/environment-deployment-template.yml
+    parameters:
+      solutionName: $(solutionName)
+      pathToSolutionFolder: $(pathToSolutionFolder)
+      buildContext: $(buildContext)
+      releaseName: $(releaseName)
+      environment: 'qa'
+      serviceType: $(serviceType)
+      acrUrl: $(acrUrl)
+      acrServiceConnection: $(acrServiceConnection)
+      k8sServiceConnection: $(k8sConnection)
+      requiresApproval: false
+
+# Deploy to STAGING (auto-deploy when merged to staging branch)
+- ${{ if and(ne(variables['Build.Reason'], 'PullRequest'), eq(variables['Build.SourceBranch'], 'refs/heads/staging')) }}:
+  - template: /.pipeline-templates/environment-deployment-template.yml
+    parameters:
+      solutionName: $(solutionName)
+      pathToSolutionFolder: $(pathToSolutionFolder)
+      buildContext: $(buildContext)
+      releaseName: $(releaseName)
+      environment: 'staging'
+      serviceType: $(serviceType)
+      acrUrl: $(acrUrl)
+      acrServiceConnection: $(acrServiceConnection)
+      k8sServiceConnection: $(k8sConnection)
+      requiresApproval: false
+
+# Deploy to PRODUCTION (requires manual approval when merged to main branch)
+- ${{ if and(ne(variables['Build.Reason'], 'PullRequest'), eq(variables['Build.SourceBranch'], 'refs/heads/main')) }}:
+  - template: /.pipeline-templates/environment-deployment-template.yml
+    parameters:
+      solutionName: $(solutionName)
+      pathToSolutionFolder: $(pathToSolutionFolder)
+      buildContext: $(buildContext)
+      releaseName: $(releaseName)
+      environment: 'prod'
+      serviceType: $(serviceType)
+      acrUrl: $(acrUrl)
+      acrServiceConnection: $(acrServiceConnection)
+      k8sServiceConnection: $(k8sConnection)
+      requiresApproval: true

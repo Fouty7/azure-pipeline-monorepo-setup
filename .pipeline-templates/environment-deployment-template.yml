@@ -1,0 +1,182 @@
+parameters:
+- name: solutionName
+  type: string
+- name: pathToSolutionFolder
+  type: string
+- name: buildContext
+  type: string
+- name: releaseName
+  type: string
+- name: environment
+  type: string  # dev, qa, staging, prod
+- name: buildConfiguration
+  type: string
+  default: 'Release'
+- name: serviceType
+  type: string
+  default: 'dotnet'  # 'dotnet' or 'python'
+- name: acrUrl
+  type: string
+  default: 'your-acr.azurecr.io'
+- name: requiresApproval
+  type: boolean
+  default: false
+- name: k8sServiceConnection
+  type: string
+  default: ''
+- name: acrServiceConnection
+  type: string
+  default: 'MyACR'
+
+variables:
+  solutionName: ${{ parameters.solutionName }}
+  imgName: ${{ lower(parameters.solutionName) }}
+  pathToSolutionFolder: ${{ parameters.pathToSolutionFolder }}
+  imgPrecursor: ${{ lower(parameters.pathToSolutionFolder) }}
+  acrUrl: ${{ parameters.acrUrl }}
+  buildConfiguration: ${{ parameters.buildConfiguration }}
+  # Environment-specific configurations
+  namespace: ${{ parameters.environment }}
+  environmentName: ${{ upper(parameters.environment) }}
+  ${{ if eq(parameters.environment, 'dev') }}:
+    k8sServiceConnection: ${{ coalesce(parameters.k8sServiceConnection, 'AKSDev') }}
+    azureEnvironment: 'Dev'
+  ${{ if eq(parameters.environment, 'qa') }}:
+    k8sServiceConnection: ${{ coalesce(parameters.k8sServiceConnection, 'AKSQA') }}
+    azureEnvironment: 'QA'
+  ${{ if eq(parameters.environment, 'staging') }}:
+    k8sServiceConnection: ${{ coalesce(parameters.k8sServiceConnection, 'AKSStaging') }}
+    azureEnvironment: 'Staging'
+  ${{ if eq(parameters.environment, 'prod') }}:
+    k8sServiceConnection: ${{ coalesce(parameters.k8sServiceConnection, 'AKSProd') }}
+    azureEnvironment: 'Production'
+
+stages:
+# Build and Test Stage (only for .NET services)
+- stage: BuildAndTest_${{ parameters.environment }}
+  displayName: 'Build and Test (${{ parameters.environment }})' 
+  condition: eq('${{ parameters.serviceType }}', 'dotnet')
+  jobs:
+  - job: BuildAndTestMicroservice
+    displayName: 'Build and Test Microservice'
+    pool:
+      vmImage: 'windows-latest'
+    steps:
+    - task: UseDotNet@2
+      inputs:
+        packageType: 'sdk'
+        version: '8.x'
+        installationPath: $(Agent.ToolsDirectory)\dotnet
+        
+    - task: DotNetCoreCLI@2
+      displayName: 'Restore NuGet Packages'
+      inputs:
+        command: restore
+        projects: '${{ parameters.pathToSolutionFolder }}/**/*.csproj'
+        feedsToUse: 'select'
+      continueOnError: true
+        
+    - task: DotNetCoreCLI@2
+      displayName: 'Build Solution'
+      inputs:
+        command: 'build'
+        projects: '${{ parameters.pathToSolutionFolder }}/**/*.csproj'
+        arguments: '--configuration ${{ parameters.buildConfiguration }}'
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Run Unit Tests'
+      inputs:
+        command: 'test'
+        projects: '${{ parameters.pathToSolutionFolder }}/**/*Tests.csproj'
+        arguments: '--configuration ${{ parameters.buildConfiguration }} --no-build --logger trx'
+      continueOnError: true
+
+    - task: PublishTestResults@2
+      displayName: 'Publish Test Results'
+      condition: succeededOrFailed()
+      inputs:
+        testResultsFormat: 'VSTest'
+        testResultsFiles: '**/*.trx'
+        mergeTestResults: true
+        failTaskOnFailedTests: false
+
+# Dockerize and Deploy Stage
+- stage: Deploy_${{ parameters.environment }}
+  displayName: 'Deploy to ${{ upper(parameters.environment) }}'
+  ${{ if eq(parameters.serviceType, 'dotnet') }}:
+    dependsOn: BuildAndTest_${{ parameters.environment }}
+  jobs:
+  - deployment: Deploy${{ parameters.environment }}
+    displayName: 'Deploy to ${{ upper(parameters.environment) }} Environment'
+    ${{ if eq(parameters.requiresApproval, true) }}:
+      environment: $(azureEnvironment)
+    pool:
+      vmImage: 'ubuntu-latest'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - checkout: self
+          
+          - task: Docker@2
+            displayName: 'Build Docker Image'
+            inputs:
+              repository: '${{ parameters.environment }}/${{ parameters.releaseName }}'
+              containerRegistry: '${{ parameters.acrServiceConnection }}'
+              command: 'build'
+              dockerfile: '${{ parameters.pathToSolutionFolder }}/Dockerfile'
+              buildContext: ${{ parameters.buildContext }}
+              tags: |
+                $(Build.BuildNumber)
+                ${{ parameters.environment }}-latest
+
+          - task: Docker@2
+            displayName: 'Push Docker Image to ACR'
+            inputs:
+              containerRegistry: '${{ parameters.acrServiceConnection }}'
+              repository: '${{ parameters.environment }}/${{ parameters.releaseName }}'
+              command: 'push'
+              tags: |
+                $(Build.BuildNumber)
+                ${{ parameters.environment }}-latest
+
+          # Download secure values file for non-dev environments
+          - task: DownloadSecureFile@1
+            name: DownloadSecureYml
+            condition: ne('${{ parameters.environment }}', 'dev')
+            displayName: 'Download Secure Values File'
+            inputs:
+              secureFile: '${{ parameters.releaseName }}-${{ parameters.environment }}-values.yml'
+            continueOnError: true
+
+          - task: HelmDeploy@1
+            displayName: 'Deploy to AKS using Helm'
+            inputs:
+              connectionType: 'Kubernetes Service Connection'
+              kubernetesServiceConnection: $(k8sServiceConnection)
+              namespace: $(namespace)
+              command: 'upgrade'
+              chartType: 'FilePath'
+              chartPath: './shared/helm-charts/plain-app-chart'
+              releaseName: ${{ parameters.releaseName }}
+              install: true
+              waitForExecution: true
+              arguments: '--create-namespace'
+              overrideValues: 'image.repository=$(acrUrl)/${{ parameters.environment }}/${{ parameters.releaseName }},image.tag=$(Build.BuildNumber),environment=${{ parameters.environment }}'
+              valueFile: |
+                ${{ if ne(parameters.environment, 'dev') }}:
+                  $(DownloadSecureYml.secureFilePath)
+                ${{ if eq(parameters.environment, 'dev') }}:
+                  ${{ parameters.pathToSolutionFolder }}/values.yaml
+
+          - bash: |
+              echo "=========================================="
+              echo "✅ Deployment to ${{ upper(parameters.environment) }} Successful"
+              echo "=========================================="
+              echo "Service: ${{ parameters.solutionName }}"
+              echo "Environment: ${{ parameters.environment }}"
+              echo "Namespace: $(namespace)"
+              echo "Release: ${{ parameters.releaseName }}"
+              echo "Image: $(acrUrl)/${{ parameters.environment }}/${{ parameters.releaseName }}:$(Build.BuildNumber)"
+              echo "=========================================="
+            displayName: 'Deployment Summary'

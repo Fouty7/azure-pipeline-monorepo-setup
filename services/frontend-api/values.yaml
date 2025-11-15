@@ -1,0 +1,42 @@
+replicaCount: 2
+
+image:
+  repository: your-acr.azurecr.io/dev/mycai/sample-apps/frontend-api
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+service:
+  type: LoadBalancer
+  port: 80
+  targetPort: 8080
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+healthCheck:
+  enabled: true
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: 8080
+    initialDelaySeconds: 30
+    periodSeconds: 10
+  readinessProbe:
+    httpGet:
+      path: /health
+      port: 8080
+    initialDelaySeconds: 10
+    periodSeconds: 5
+
+env:
+  - name: BACKEND_API_URL
+    value: "http://backend-api-svc"
+  - name: ASPNETCORE_URLS
+    value: "http://+:8080"
+
+environment: dev
