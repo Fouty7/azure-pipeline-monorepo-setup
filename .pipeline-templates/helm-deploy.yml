@@ -68,6 +68,15 @@ stages:
               secureFile: '${{ parameters.releaseName }}-${{ parameters.environment }}-values.yml'
             continueOnError: true
 
+          - bash: |
+              if [ '${{ parameters.environment }}' != 'dev' ]; then
+                HELM_VALUES_FILE=$(HelmValues.secureFilePath)
+              else
+                HELM_VALUES_FILE='${{ parameters.pathToSolutionFolder }}/values.yaml'
+              fi
+              echo "##vso[task.setvariable variable=HELM_VALUES_FILE]$HELM_VALUES_FILE"
+            displayName: 'Determine Helm Values File Path'
+
           - task: HelmDeploy@1
             displayName: 'Helm Upgrade Release'
             inputs:
@@ -82,7 +91,7 @@ stages:
               namespace: ${{ parameters.environment }}
               arguments: '--create-namespace'
               overrideValues: 'image.repository=${{ parameters.acrUrl }}/${{ parameters.environment }}/${{ parameters.releaseName }},image.tag=$(Build.BuildNumber),environment=${{ parameters.environment }}'
-              valueFile: ${{ if ne(parameters.environment, 'dev') }}$(HelmValues.secureFilePath)${{ else }}'${{ parameters.pathToSolutionFolder }}/values.yaml'${{ endif }}
+              valueFile: $(HELM_VALUES_FILE)
 
           - bash: |
               echo "=========================================="
