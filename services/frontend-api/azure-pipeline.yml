@@ -57,7 +57,9 @@ stages:
 - ${{ if ne(variables['Build.Reason'], 'PullRequest') }}:
   - template: /.pipeline-templates/build-and-test.yml
     parameters:
+      solutionName: $(solutionName)
       pathToSolutionFolder: $(pathToSolutionFolder)
+      buildContext: $(buildContext)
       buildConfiguration: $(buildConfiguration)
 
 # ============================================

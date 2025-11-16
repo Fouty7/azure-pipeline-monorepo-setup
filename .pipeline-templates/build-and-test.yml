@@ -1,5 +1,9 @@
 parameters:
+- name: solutionName
+  type: string
 - name: pathToSolutionFolder
+  type: string
+- name: buildContext
   type: string
 - name: buildConfiguration
   type: string
