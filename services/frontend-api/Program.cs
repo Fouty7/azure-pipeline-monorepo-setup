@@ -1,4 +1,4 @@
-// New test happening hope this builds the pipeline
+// New test happening hope
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
