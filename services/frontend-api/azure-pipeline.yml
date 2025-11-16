@@ -41,79 +41,86 @@ variables:
 
 stages:
 # ============================================
-# PR VALIDATION STAGE
+# PR VALIDATION STAGE - Only for PRs
 # ============================================
-- template: /.pipeline-templates/pr-validation-template.yml
-  parameters:
-    solutionName: $(solutionName)
-    pathToSolutionFolder: $(pathToSolutionFolder)
-    buildContext: $(buildContext)
-    buildConfiguration: $(buildConfiguration)
+- ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
+  - template: /.pipeline-templates/pr-validation-template.yml
+    parameters:
+      solutionName: $(solutionName)
+      pathToSolutionFolder: $(pathToSolutionFolder)
+      buildContext: $(buildContext)
+      buildConfiguration: $(buildConfiguration)
 
 # ============================================
-# BUILD AND TEST STAGE (Only on merges to branches)
+# BUILD AND TEST STAGE - Only on merges
 # ============================================
-- template: /.pipeline-templates/build-and-test.yml
-  parameters:
-    pathToSolutionFolder: $(pathToSolutionFolder)
-    buildConfiguration: $(buildConfiguration)
+- ${{ if ne(variables['Build.Reason'], 'PullRequest') }}:
+  - template: /.pipeline-templates/build-and-test.yml
+    parameters:
+      pathToSolutionFolder: $(pathToSolutionFolder)
+      buildConfiguration: $(buildConfiguration)
 
 # ============================================
-# DOCKER BUILD AND PUSH (Only on merges to branches)
+# DOCKER BUILD AND PUSH - Only on merges
 # ============================================
-- template: /.pipeline-templates/docker-build-push.yml
-  parameters:
-    pathToSolutionFolder: $(pathToSolutionFolder)
-    buildContext: $(buildContext)
-    releaseName: $(releaseName)
-    environment: dev
-    acrUrl: $(acrUrl)
-    acrServiceConnection: $(acrServiceConnection)
+- ${{ if ne(variables['Build.Reason'], 'PullRequest') }}:
+  - template: /.pipeline-templates/docker-build-push.yml
+    parameters:
+      pathToSolutionFolder: $(pathToSolutionFolder)
+      buildContext: $(buildContext)
+      releaseName: $(releaseName)
+      environment: dev
+      acrUrl: $(acrUrl)
+      acrServiceConnection: $(acrServiceConnection)
 
 # ============================================
-# HELM DEPLOY TO DEV
+# HELM DEPLOY TO DEV - Only on merges
 # ============================================
-- template: /.pipeline-templates/helm-deploy.yml
-  parameters:
-    releaseName: $(releaseName)
-    environment: dev
-    pathToSolutionFolder: $(pathToSolutionFolder)
-    acrUrl: $(acrUrl)
-    k8sServiceConnection: 'aks-dev-connection'  # UPDATE THIS
-    requiresApproval: false
+- ${{ if ne(variables['Build.Reason'], 'PullRequest') }}:
+  - template: /.pipeline-templates/helm-deploy.yml
+    parameters:
+      releaseName: $(releaseName)
+      environment: dev
+      pathToSolutionFolder: $(pathToSolutionFolder)
+      acrUrl: $(acrUrl)
+      k8sServiceConnection: 'aks-dev-connection'  # UPDATE THIS
+      requiresApproval: false
 
 # ============================================
-# HELM DEPLOY TO QA
+# HELM DEPLOY TO QA - Only on merges
 # ============================================
-- template: /.pipeline-templates/helm-deploy.yml
-  parameters:
-    releaseName: $(releaseName)
-    environment: qa
-    pathToSolutionFolder: $(pathToSolutionFolder)
-    acrUrl: $(acrUrl)
-    k8sServiceConnection: 'aks-qa-connection'  # UPDATE THIS
-    requiresApproval: false
+- ${{ if ne(variables['Build.Reason'], 'PullRequest') }}:
+  - template: /.pipeline-templates/helm-deploy.yml
+    parameters:
+      releaseName: $(releaseName)
+      environment: qa
+      pathToSolutionFolder: $(pathToSolutionFolder)
+      acrUrl: $(acrUrl)
+      k8sServiceConnection: 'aks-qa-connection'  # UPDATE THIS
+      requiresApproval: false
 
 # ============================================
-# HELM DEPLOY TO STAGING
+# HELM DEPLOY TO STAGING - Only on merges
 # ============================================
-- template: /.pipeline-templates/helm-deploy.yml
-  parameters:
-    releaseName: $(releaseName)
-    environment: staging
-    pathToSolutionFolder: $(pathToSolutionFolder)
-    acrUrl: $(acrUrl)
-    k8sServiceConnection: 'aks-staging-connection'  # UPDATE THIS
-    requiresApproval: false
+- ${{ if ne(variables['Build.Reason'], 'PullRequest') }}:
+  - template: /.pipeline-templates/helm-deploy.yml
+    parameters:
+      releaseName: $(releaseName)
+      environment: staging
+      pathToSolutionFolder: $(pathToSolutionFolder)
+      acrUrl: $(acrUrl)
+      k8sServiceConnection: 'aks-staging-connection'  # UPDATE THIS
+      requiresApproval: false
 
 # ============================================
-# HELM DEPLOY TO PRODUCTION
+# HELM DEPLOY TO PRODUCTION - Only on merges
 # ============================================
-- template: /.pipeline-templates/helm-deploy.yml
-  parameters:
-    releaseName: $(releaseName)
-    environment: prod
-    pathToSolutionFolder: $(pathToSolutionFolder)
-    acrUrl: $(acrUrl)
-    k8sServiceConnection: 'aks-prod-connection'  # UPDATE THIS
-    requiresApproval: true
+- ${{ if ne(variables['Build.Reason'], 'PullRequest') }}:
+  - template: /.pipeline-templates/helm-deploy.yml
+    parameters:
+      releaseName: $(releaseName)
+      environment: prod
+      pathToSolutionFolder: $(pathToSolutionFolder)
+      acrUrl: $(acrUrl)
+      k8sServiceConnection: 'aks-prod-connection'  # UPDATE THIS
+      requiresApproval: true
