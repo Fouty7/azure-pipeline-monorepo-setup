@@ -1,0 +1,95 @@
+parameters:
+- name: releaseName
+  type: string
+- name: environment
+  type: string
+- name: pathToSolutionFolder
+  type: string
+- name: acrUrl
+  type: string
+- name: k8sServiceConnection
+  type: string
+- name: requiresApproval
+  type: boolean
+  default: false
+
+stages:
+- stage: HelmDeploy
+  displayName: 'Deploy to AKS'
+  dependsOn: DockerBuildPush
+  condition: succeeded()
+  ${{ if eq(parameters.requiresApproval, true) }}:
+    pool: server
+  jobs:
+  - ${{ if eq(parameters.requiresApproval, true) }}:
+    - job: WaitForValidation
+      displayName: 'Approval Gate - Production Deployment'
+      pool: server
+      timeoutInMinutes: 1440
+      steps:
+      - task: ManualValidation@0
+        inputs:
+          notifyUsers: ''
+          instructions: 'Review and approve deployment to production'
+          onTimeout: 'reject'
+
+  - deployment: HelmDeploy
+    displayName: 'Helm Deploy to ${{ upper(parameters.environment) }}'
+    ${{ if eq(parameters.requiresApproval, true) }}:
+      dependsOn: WaitForValidation
+      condition: succeeded()
+    pool:
+      vmImage: 'ubuntu-latest'
+    environment: '${{ parameters.environment }}'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - checkout: self
+
+          - bash: |
+              if [ '${{ parameters.environment }}' == 'dev' ]; then
+                K8S_CONN='aks-dev-connection'
+              elif [ '${{ parameters.environment }}' == 'qa' ]; then
+                K8S_CONN='aks-qa-connection'
+              elif [ '${{ parameters.environment }}' == 'staging' ]; then
+                K8S_CONN='aks-staging-connection'
+              elif [ '${{ parameters.environment }}' == 'prod' ]; then
+                K8S_CONN='aks-prod-connection'
+              fi
+              echo "##vso[task.setvariable variable=K8S_CONNECTION]$K8S_CONN"
+            displayName: 'Determine K8S Connection'
+
+          - task: DownloadSecureFile@1
+            name: HelmValues
+            condition: ne('${{ parameters.environment }}', 'dev')
+            displayName: 'Download Secure Helm Values'
+            inputs:
+              secureFile: '${{ parameters.releaseName }}-${{ parameters.environment }}-values.yml'
+            continueOnError: true
+
+          - task: HelmDeploy@1
+            displayName: 'Helm Upgrade Release'
+            inputs:
+              connectionType: 'Kubernetes Service Connection'
+              kubernetesServiceConnection: $(K8S_CONNECTION)
+              command: 'upgrade'
+              chartType: 'FilePath'
+              chartPath: './shared/helm-charts/plain-app-chart'
+              releaseName: ${{ parameters.releaseName }}
+              install: true
+              waitForExecution: true
+              namespace: ${{ parameters.environment }}
+              arguments: '--create-namespace'
+              overrideValues: 'image.repository=${{ parameters.acrUrl }}/${{ parameters.environment }}/${{ parameters.releaseName }},image.tag=$(Build.BuildNumber),environment=${{ parameters.environment }}'
+              valueFile: ${{ if ne(parameters.environment, 'dev') }}$(HelmValues.secureFilePath)${{ else }}'${{ parameters.pathToSolutionFolder }}/values.yaml'${{ endif }}
+
+          - bash: |
+              echo "=========================================="
+              echo "✅ Deployment to ${{ upper(parameters.environment) }} Successful"
+              echo "=========================================="
+              echo "Release: ${{ parameters.releaseName }}"
+              echo "Environment: ${{ parameters.environment }}"
+              echo "Image: ${{ parameters.acrUrl }}/${{ parameters.environment }}/${{ parameters.releaseName }}:$(Build.BuildNumber)"
+              echo "=========================================="
+            displayName: 'Deployment Summary'

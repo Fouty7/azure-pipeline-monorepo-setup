@@ -1,0 +1,54 @@
+parameters:
+- name: pathToSolutionFolder
+  type: string
+- name: buildConfiguration
+  type: string
+  default: 'Release'
+
+stages:
+- stage: BuildAndTest
+  displayName: 'Build and Test'
+  jobs:
+  - job: BuildAndTest
+    displayName: 'Build and Test Service'
+    pool:
+      vmImage: 'windows-latest'
+    steps:
+    - task: UseDotNet@2
+      displayName: 'Install .NET 8'
+      inputs:
+        packageType: 'sdk'
+        version: '8.x'
+        installationPath: $(Agent.ToolsDirectory)\dotnet
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Restore NuGet Packages'
+      inputs:
+        command: restore
+        projects: '${{ parameters.pathToSolutionFolder }}/**/*.csproj'
+        feedsToUse: 'select'
+      continueOnError: true
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Build Solution'
+      inputs:
+        command: 'build'
+        projects: '${{ parameters.pathToSolutionFolder }}/**/*.csproj'
+        arguments: '--configuration ${{ parameters.buildConfiguration }}'
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Run Unit Tests'
+      inputs:
+        command: 'test'
+        projects: '${{ parameters.pathToSolutionFolder }}/**/*Tests.csproj'
+        arguments: '--configuration ${{ parameters.buildConfiguration }} --no-build --logger trx'
+      continueOnError: true
+
+    - task: PublishTestResults@2
+      displayName: 'Publish Test Results'
+      condition: succeededOrFailed()
+      inputs:
+        testResultsFormat: 'VSTest'
+        testResultsFiles: '**/*.trx'
+        mergeTestResults: true
+        failTaskOnFailedTests: false
