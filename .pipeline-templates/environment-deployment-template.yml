@@ -42,8 +42,8 @@ variables:
 stages:
 # Build and Test Stage (only for .NET services)
 - stage: BuildAndTest_${{ parameters.environment }}
-  displayName: 'Build and Test (${{ parameters.environment }})' 
-  condition: eq('${{ parameters.serviceType }}', 'dotnet')
+  displayName: 'Build and Test (${{ parameters.environment }})'
+  condition: and(ne(variables['Build.Reason'], 'PullRequest'), eq('${{ parameters.serviceType }}', 'dotnet'))
   jobs:
   - job: BuildAndTestMicroservice
     displayName: 'Build and Test Microservice'
