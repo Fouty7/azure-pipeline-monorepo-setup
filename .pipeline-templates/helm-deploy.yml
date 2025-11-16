@@ -14,8 +14,8 @@ parameters:
   default: false
 
 stages:
-- stage: HelmDeploy
-  displayName: 'Deploy to AKS'
+- stage: HelmDeploy_${{ parameters.environment }}
+  displayName: 'Deploy to AKS - ${{ upper(parameters.environment) }}'
   dependsOn: DockerBuildPush
   condition: succeeded()
   ${{ if eq(parameters.requiresApproval, true) }}:
@@ -33,7 +33,7 @@ stages:
           instructions: 'Review and approve deployment to production'
           onTimeout: 'reject'
 
-  - deployment: HelmDeploy
+  - deployment: HelmDeploy_${{ parameters.environment }}
     displayName: 'Helm Deploy to ${{ upper(parameters.environment) }}'
     ${{ if eq(parameters.requiresApproval, true) }}:
       dependsOn: WaitForValidation
