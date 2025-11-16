@@ -40,20 +40,20 @@ variables:
   releaseName: 'backend-api'
   serviceType: 'dotnet'
   acrUrl: 'mytestacr690.azurecr.io'  # UPDATE THIS
-  acrServiceConnection: 'MyACR'  # UPDATE THIS
+  acrServiceConnection: 'my-acr-connection'  # UPDATE THIS
   # Determine target environment based on branch
   ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/dev') }}:
     targetEnvironment: 'dev'
-    k8sConnection: 'AKSDev'  # UPDATE THIS
+    k8sConnection: 'aks-dev-connection'  # UPDATE THIS
   ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/qa') }}:
     targetEnvironment: 'qa'
-    k8sConnection: 'AKSQA'  # UPDATE THIS
+    k8sConnection: 'aks-qa-connection'  # UPDATE THIS
   ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/staging') }}:
     targetEnvironment: 'staging'
-    k8sConnection: 'AKSStaging'  # UPDATE THIS
+    k8sConnection: 'aks-staging-connection'  # UPDATE THIS
   ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/main') }}:
     targetEnvironment: 'prod'
-    k8sConnection: 'AKSProd'  # UPDATE THIS
+    k8sConnection: 'aks-prod-connection'  # UPDATE THIS
 
 stages:
 # ============================================

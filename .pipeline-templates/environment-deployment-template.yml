@@ -26,7 +26,7 @@ parameters:
   default: ''
 - name: acrServiceConnection
   type: string
-  default: 'MyACR'
+  default: 'my-acr-connection'
 
 variables:
   solutionName: ${{ parameters.solutionName }}
@@ -39,16 +39,16 @@ variables:
   namespace: ${{ parameters.environment }}
   environmentName: ${{ upper(parameters.environment) }}
   ${{ if eq(parameters.environment, 'dev') }}:
-    k8sServiceConnection: ${{ coalesce(parameters.k8sServiceConnection, 'AKSDev') }}
+    k8sServiceConnection: ${{ coalesce(parameters.k8sServiceConnection, 'aks-dev-connection') }}
     azureEnvironment: 'Dev'
   ${{ if eq(parameters.environment, 'qa') }}:
-    k8sServiceConnection: ${{ coalesce(parameters.k8sServiceConnection, 'AKSQA') }}
+    k8sServiceConnection: ${{ coalesce(parameters.k8sServiceConnection, 'aks-qa-connection') }}
     azureEnvironment: 'QA'
   ${{ if eq(parameters.environment, 'staging') }}:
-    k8sServiceConnection: ${{ coalesce(parameters.k8sServiceConnection, 'AKSStaging') }}
+    k8sServiceConnection: ${{ coalesce(parameters.k8sServiceConnection, 'aks-staging-connection') }}
     azureEnvironment: 'Staging'
   ${{ if eq(parameters.environment, 'prod') }}:
-    k8sServiceConnection: ${{ coalesce(parameters.k8sServiceConnection, 'AKSProd') }}
+    k8sServiceConnection: ${{ coalesce(parameters.k8sServiceConnection, 'aks-prod-connection') }}
     azureEnvironment: 'Production'
 
 stages:
