@@ -91,13 +91,9 @@ stages:
 # Dockerize and Deploy Stage
 - stage: Deploy_${{ parameters.environment }}
   displayName: 'Deploy to ${{ upper(parameters.environment) }}'
-  ${{ if eq(parameters.serviceType, 'dotnet') }}:
-    dependsOn: BuildAndTest_${{ parameters.environment }}
   jobs:
   - deployment: Deploy${{ parameters.environment }}
     displayName: 'Deploy to ${{ upper(parameters.environment) }} Environment'
-    ${{ if eq(parameters.requiresApproval, true) }}:
-      environment: $(AZURE_ENVIRONMENT)
     pool:
       vmImage: 'ubuntu-latest'
     strategy:
