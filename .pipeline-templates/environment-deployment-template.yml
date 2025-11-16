@@ -91,8 +91,7 @@ stages:
 # Dockerize and Deploy Stage
 - stage: Deploy_${{ parameters.environment }}
   displayName: 'Deploy to ${{ upper(parameters.environment) }}'
-  ${{ if eq(parameters.serviceType, 'dotnet') }}:
-    dependsOn: BuildAndTest_${{ parameters.environment }}
+  dependsOn: ${{ if eq(parameters.serviceType, 'dotnet') }} BuildAndTest_${{ parameters.environment }} ${{ else }} [] ${{ endif }}
   jobs:
   - deployment: Deploy${{ parameters.environment }}
     displayName: 'Deploy to ${{ upper(parameters.environment) }} Environment'
