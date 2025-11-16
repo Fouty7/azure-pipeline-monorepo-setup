@@ -169,22 +169,6 @@ The pipeline has been restructured to be **simple, maintainable, and reliable**.
 
 ---
 
-## Service Connection References
-
-Update these in `azure-pipeline.yml` lines 39, 82, 94, 106, 118:
-
-- **acrServiceConnection**: Azure Container Registry connection name
-  - Default: `my-acr-connection`
-  - Update with your actual ACR connection name
-
-- **k8sServiceConnection** (per environment): Kubernetes service connection
-  - Dev: `aks-dev-connection`
-  - QA: `aks-qa-connection`
-  - Staging: `aks-staging-connection`
-  - Prod: `aks-prod-connection`
-
----
-
 ## Troubleshooting
 
 **PR Validation Not Running?**
@@ -203,28 +187,3 @@ Update these in `azure-pipeline.yml` lines 39, 82, 94, 106, 118:
 - Check Azure DevOps environment is configured
 
 ---
-
-## Testing the Pipeline
-
-1. **Test PR Validation:**
-   ```
-   git checkout -b feature/test-pr
-   # Make a small change
-   git push origin feature/test-pr
-   # Create PR to dev
-   # Watch PR validation run
-   ```
-
-2. **Test Deployment:**
-   ```
-   # After PR is merged to dev
-   # Watch Build → Docker → Helm Deploy stages run
-   ```
-
-3. **Test Production Approval:**
-   ```
-   # Merge to main
-   # Pipeline will pause at "Approval Gate - Production Deployment"
-   # Approve in Azure DevOps
-   # Deployment proceeds
-   ```
