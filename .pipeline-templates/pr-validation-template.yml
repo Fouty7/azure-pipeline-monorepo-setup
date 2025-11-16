@@ -15,7 +15,6 @@ parameters:
 stages:
 - stage: PRValidation
   displayName: 'PR Validation - Build and Test'
-  condition: eq(variables['Build.Reason'], 'PullRequest')
   jobs:
   - job: ValidateDotNetService
     displayName: 'Validate .NET Service'
