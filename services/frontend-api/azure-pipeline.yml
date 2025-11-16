@@ -69,7 +69,6 @@ stages:
       pathToSolutionFolder: $(pathToSolutionFolder)
       buildContext: $(buildContext)
       releaseName: $(releaseName)
-      environment: dev
       acrUrl: $(acrUrl)
       acrServiceConnection: $(acrServiceConnection)
 

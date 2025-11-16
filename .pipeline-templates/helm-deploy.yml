@@ -60,7 +60,7 @@ stages:
               waitForExecution: true
               namespace: ${{ parameters.environment }}
               arguments: '--create-namespace'
-              overrideValues: 'image.repository=${{ parameters.acrUrl }}/${{ parameters.environment }}/${{ parameters.releaseName }},image.tag=$(Build.BuildNumber),environment=${{ parameters.environment }}'
+              overrideValues: 'image.repository=${{ parameters.acrUrl }}/${{ parameters.releaseName }},image.tag=$(Build.BuildNumber),environment=${{ parameters.environment }}'
 
           - bash: |
               echo "=========================================="

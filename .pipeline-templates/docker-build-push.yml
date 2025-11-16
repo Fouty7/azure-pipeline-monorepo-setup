@@ -5,8 +5,6 @@ parameters:
   type: string
 - name: releaseName
   type: string
-- name: environment
-  type: string
 - name: acrUrl
   type: string
 - name: acrServiceConnection
@@ -30,19 +28,19 @@ stages:
       inputs:
         command: 'build'
         containerRegistry: '${{ parameters.acrServiceConnection }}'
-        repository: '${{ parameters.environment }}/${{ parameters.releaseName }}'
+        repository: '${{ parameters.releaseName }}'
         dockerfile: '${{ parameters.pathToSolutionFolder }}/Dockerfile'
         buildContext: ${{ parameters.buildContext }}
         tags: |
           $(Build.BuildNumber)
-          ${{ parameters.environment }}-latest
+          latest
 
     - task: Docker@2
       displayName: 'Push Docker Image to ACR'
       inputs:
         command: 'push'
         containerRegistry: '${{ parameters.acrServiceConnection }}'
-        repository: '${{ parameters.environment }}/${{ parameters.releaseName }}'
+        repository: '${{ parameters.releaseName }}'
         tags: |
           $(Build.BuildNumber)
-          ${{ parameters.environment }}-latest
+          latest
