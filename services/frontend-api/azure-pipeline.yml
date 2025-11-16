@@ -74,9 +74,9 @@ stages:
       acrServiceConnection: $(acrServiceConnection)
 
 # ============================================
-# HELM DEPLOY TO DEV - Only on merges
+# HELM DEPLOY TO DEV - Only when merged to dev
 # ============================================
-- ${{ if ne(variables['Build.Reason'], 'PullRequest') }}:
+- ${{ if and(ne(variables['Build.Reason'], 'PullRequest'), eq(variables['Build.SourceBranch'], 'refs/heads/dev')) }}:
   - template: /.pipeline-templates/helm-deploy.yml
     parameters:
       releaseName: $(releaseName)
@@ -87,9 +87,9 @@ stages:
       requiresApproval: false
 
 # ============================================
-# HELM DEPLOY TO QA - Only on merges
+# HELM DEPLOY TO QA - Only when merged to qa
 # ============================================
-- ${{ if ne(variables['Build.Reason'], 'PullRequest') }}:
+- ${{ if and(ne(variables['Build.Reason'], 'PullRequest'), eq(variables['Build.SourceBranch'], 'refs/heads/qa')) }}:
   - template: /.pipeline-templates/helm-deploy.yml
     parameters:
       releaseName: $(releaseName)
@@ -100,9 +100,9 @@ stages:
       requiresApproval: false
 
 # ============================================
-# HELM DEPLOY TO STAGING - Only on merges
+# HELM DEPLOY TO STAGING - Only when merged to staging
 # ============================================
-- ${{ if ne(variables['Build.Reason'], 'PullRequest') }}:
+- ${{ if and(ne(variables['Build.Reason'], 'PullRequest'), eq(variables['Build.SourceBranch'], 'refs/heads/staging')) }}:
   - template: /.pipeline-templates/helm-deploy.yml
     parameters:
       releaseName: $(releaseName)
@@ -113,9 +113,9 @@ stages:
       requiresApproval: false
 
 # ============================================
-# HELM DEPLOY TO PRODUCTION - Only on merges
+# HELM DEPLOY TO PRODUCTION - Only when merged to main
 # ============================================
-- ${{ if ne(variables['Build.Reason'], 'PullRequest') }}:
+- ${{ if and(ne(variables['Build.Reason'], 'PullRequest'), eq(variables['Build.SourceBranch'], 'refs/heads/main')) }}:
   - template: /.pipeline-templates/helm-deploy.yml
     parameters:
       releaseName: $(releaseName)
