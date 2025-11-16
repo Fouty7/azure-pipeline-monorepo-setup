@@ -46,10 +46,10 @@ stages:
 - ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
   - template: /.pipeline-templates/pr-validation-template.yml
     parameters:
-      solutionName: $(solutionName)
-      pathToSolutionFolder: $(pathToSolutionFolder)
-      buildContext: $(buildContext)
-      buildConfiguration: $(buildConfiguration)
+      solutionName: 'FrontendApi'
+      pathToSolutionFolder: 'services/frontend-api'
+      buildContext: 'services/frontend-api'
+      buildConfiguration: 'Release'
 
 # ============================================
 # BUILD AND TEST STAGE - Only on merges
