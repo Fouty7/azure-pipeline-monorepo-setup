@@ -268,12 +268,21 @@ curl http://localhost:5000/api/backend/data
 # Frontend
 cd services/frontend-api
 docker build -t frontend-api:local .
-docker run -p 8080:8080 frontend-api:local
+docker run -d -p 8080:8080 frontend-api:local
+
+# Test endpoints
+curl http://localhost:8080/health
+curl http://localhost:8080/api/frontend/info
 
 # Backend
 cd services/backend-api
 docker build -t backend-api:local .
-docker run -p 8081:8080 backend-api:local
+docker run -d -p 8081:8080 backend-api:local
+
+# Test endpoints
+curl http://localhost:8081/health
+curl http://localhost:8081/api/backend/info
+curl http://localhost:8081/api/backend/data
 ```
 
 ## 🐛 Troubleshooting

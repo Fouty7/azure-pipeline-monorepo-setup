@@ -25,8 +25,6 @@
 
 By the end of this guide, you'll have:
 
-✅ AKS cluster with 4 environments (dev, qa, staging, prod)  
-✅ Azure Container Registry integrated with AKS  
 ✅ Azure DevOps pipelines with GitFlow strategy  
 ✅ Two sample .NET 8 services deployed  
 ✅ Production approval gates configured  
@@ -125,10 +123,10 @@ az account show --output table
 
 ```powershell
 # Set variables (customize these!)
-$RESOURCE_GROUP = "rg-microservices-platform"
-$LOCATION = "eastus"
-$ACR_NAME = "acrYourCompany$(Get-Random -Minimum 1000 -Maximum 9999)"
-$AKS_NAME = "aks-microservices-platform"
+$RESOURCE_GROUP = "my-rg" 
+$LOCATION = "azure region"
+$ACR_NAME = "mytestacr690"
+$AKS_NAME = "myaks"
 
 # Create resource group
 az group create --name $RESOURCE_GROUP --location $LOCATION
@@ -150,35 +148,6 @@ az acr update --name $ACR_NAME --admin-enabled true
 # Get ACR URL (SAVE THIS!)
 $ACR_URL = az acr show --name $ACR_NAME --query loginServer --output tsv
 Write-Host "📝 Your ACR URL: $ACR_URL" -ForegroundColor Yellow
-```
-
-### Step 4: Create AKS Cluster
-
-**Option A: Using Azure CLI (Recommended)**
-
-```powershell
-# Create AKS cluster (takes 5-10 minutes)
-az aks create `
-    --resource-group $RESOURCE_GROUP `
-    --name $AKS_NAME `
-    --node-count 2 `
-    --node-vm-size Standard_D2s_v3 `
-    --enable-managed-identity `
-    --generate-ssh-keys `
-    --network-plugin azure `
-    --attach-acr $ACR_NAME `
-    --location $LOCATION
-
-Write-Host "✅ AKS cluster created!" -ForegroundColor Green
-```
-
-**Option B: Using Terraform**
-
-```powershell
-cd C:\Users\Hp\OneDrive\Documents\GitHub\Azure-Environment-Terraform
-terraform init
-terraform plan -out=tfplan
-terraform apply tfplan
 ```
 
 ### Step 5: Connect to AKS
@@ -233,7 +202,7 @@ az aks check-acr `
 1. Go to https://dev.azure.com
 2. Click **New Project**
 3. Configure:
-   - **Name:** `Microservices-Platform`
+   - **Name:** `Microservices-Platform` # Modify as needed
    - **Visibility:** Private
    - **Version control:** Git
 4. Click **Create**
@@ -259,7 +228,6 @@ git checkout -b qa && git push azuredevops qa
 git checkout -b staging && git push azuredevops staging
 git checkout main
 
-Write-Host "✅ All branches created" -ForegroundColor Green
 ```
 
 ### Step 4: Create Service Connections

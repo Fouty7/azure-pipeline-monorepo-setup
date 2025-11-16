@@ -1,7 +1,7 @@
 replicaCount: 2
 
 image:
-  repository: your-acr.azurecr.io/dev/mycai/sample-apps/frontend-api
+  repository: mytestacr690.azurecr.io/dev/mycai/sample-apps/frontend-api
   pullPolicy: IfNotPresent
   tag: "latest"
 

@@ -17,7 +17,7 @@ parameters:
   default: 'dotnet'  # 'dotnet' or 'python'
 - name: acrUrl
   type: string
-  default: 'your-acr.azurecr.io'
+  default: 'mytestacr690.azurecr.io'
 - name: requiresApproval
   type: boolean
   default: false

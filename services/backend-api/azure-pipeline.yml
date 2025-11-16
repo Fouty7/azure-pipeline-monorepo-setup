@@ -39,7 +39,7 @@ variables:
   buildContext: 'services/backend-api'
   releaseName: 'backend-api'
   serviceType: 'dotnet'
-  acrUrl: 'your-acr.azurecr.io'  # UPDATE THIS
+  acrUrl: 'mytestacr690.azurecr.io'  # UPDATE THIS
   acrServiceConnection: 'MyACR'  # UPDATE THIS
   # Determine target environment based on branch
   ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/dev') }}:
