@@ -1,3 +1,4 @@
+// Testing deployment pipeline
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -41,3 +42,4 @@ app.MapHealthChecks("/health");
 app.MapGet("/health", () => Results.Ok("Healthy"));
 
 app.Run();
+
