@@ -39,6 +39,10 @@ myfile
 *.coverage
 *.coveragexml
 
+CAI-pipelines/
+HelmCharts/
+samplecase/
+error
 # NuGet
 *.nupkg
 *.snupkg

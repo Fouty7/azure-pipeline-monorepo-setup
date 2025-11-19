@@ -125,3 +125,4 @@ stages:
       acrUrl: $(acrUrl)
       k8sServiceConnection: 'aks-prod-connection'  # UPDATE THIS
       requiresApproval: true
+      secureYml: 'mycai-frontend-api-prod-secrets.yml'  # UPDATE: Azure DevOps Secure Files

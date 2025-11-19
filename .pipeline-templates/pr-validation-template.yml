@@ -28,6 +28,11 @@ stages:
         version: '8.x'
         installationPath: $(Agent.ToolsDirectory)\dotnet
         
+    - task: NuGetAuthenticate@1
+      displayName: 'Authenticate to NuGet feeds'
+      inputs:
+        nuGetServiceConnections: 'CAI Technology Solutions Packages'
+
     - task: DotNetCoreCLI@2
       displayName: 'Restore NuGet Packages'
       inputs:

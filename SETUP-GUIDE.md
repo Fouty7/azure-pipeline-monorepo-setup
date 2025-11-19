@@ -134,14 +134,6 @@ az group create --name $RESOURCE_GROUP --location $LOCATION
 
 ### Step 3: Create Azure Container Registry
 
-```powershell
-# Create ACR
-az acr create `
-    --resource-group $RESOURCE_GROUP `
-    --name $ACR_NAME `
-    --sku Standard `
-    --location $LOCATION
-
 # Enable admin access (for easier setup)
 az acr update --name $ACR_NAME --admin-enabled true
 

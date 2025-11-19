@@ -12,6 +12,9 @@ parameters:
 - name: requiresApproval
   type: boolean
   default: false
+- name: secureYml
+  type: string
+  default: ''
 
 stages:
 - stage: HelmDeploy_${{ parameters.environment }}
@@ -47,6 +50,13 @@ stages:
           steps:
           - checkout: self
 
+          - ${{ if ne(parameters.secureYml, '') }}:
+            - task: DownloadSecureFile@1
+              name: DownloadSecureYml
+              displayName: 'Download secure values file'
+              inputs:
+                secureFile: ${{ parameters.secureYml }}
+
           - task: HelmDeploy@1
             displayName: 'Helm Upgrade Release'
             inputs:
@@ -60,6 +70,9 @@ stages:
               waitForExecution: true
               namespace: ${{ parameters.environment }}
               arguments: '--create-namespace'
+              valueFiles: |
+                ${{ parameters.pathToSolutionFolder }}/values.yaml
+                ${{ if ne(parameters.secureYml, '') }}:$(DownloadSecureYml.secureFilePath)
               overrideValues: 'image.repository=${{ parameters.acrUrl }}/${{ parameters.releaseName }},image.tag=$(Build.BuildNumber),environment=${{ parameters.environment }}'
 
           - bash: |
