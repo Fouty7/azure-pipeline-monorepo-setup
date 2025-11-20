@@ -1,0 +1,54 @@
+# RIIC Client Deployment Manifest
+# This file defines what services and versions to deploy to RIIC environment
+# Update image tags here when you want to deploy new versions
+
+release:
+  name: "riic-v1.0"
+  environment: "riic"
+  description: "Initial RIIC production release"
+  
+# List all services to deploy
+services:
+  # Example Microservice 1
+  - name: "templates-microservice"
+    enabled: true  # Set to false to skip deployment
+    image:
+      repository: "mycaimicroervices-enb0gmcyhmgbc5ck.azurecr.io/dev/mycai/apps/maestro/microservices/templates"
+      tag: "20251120.1"  # Change this to deploy different version
+    helm:
+      chart: "./HelmCharts/HelmCharts/plain-app-chart"
+      releaseName: "templatesmicroservice"
+      valuesFile: "Apps/Maestro/Microservices/Templates/values.yaml"
+      namespace: "default"
+  
+  # Example Microservice 2
+  - name: "maestroapi-microservice"
+    enabled: true
+    image:
+      repository: "mycaimicroervices-enb0gmcyhmgbc5ck.azurecr.io/dev/mycai/apps/maestro/microservices/maestroapi"
+      tag: "20251120.2"
+    helm:
+      chart: "./HelmCharts/HelmCharts/plain-app-chart"
+      releaseName: "maestroapimicroservice"
+      valuesFile: "Apps/Maestro/Microservices/MaestroApi/values.yaml"
+      namespace: "default"
+  
+  # Redis (Dependency - no image needed, uses chart default)
+  - name: "redis"
+    enabled: true
+    helm:
+      chart: "./HelmCharts/HelmCharts/redis"
+      releaseName: "redis"
+      valuesFile: "./HelmCharts/HelmCharts/redis/values.yaml"
+      namespace: "default"
+  
+  # RabbitMQ (Dependency)
+  - name: "rabbitmq"
+    enabled: true
+    helm:
+      chart: "./HelmCharts/HelmCharts/rabbitmq-values"
+      releaseName: "rabbitmq"
+      valuesFile: "./HelmCharts/HelmCharts/rabbitmq-values/values.yaml"
+      namespace: "default"
+
+# Add more services as needed following the same pattern
