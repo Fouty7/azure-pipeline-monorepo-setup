@@ -188,7 +188,7 @@ If above doesn't work:
 6. Select:
    ```
    Branch: riic-environment
-   Path: /CAI-pipelines/riic-deployment-pipeline.yml
+   Path: /CAI-pipelines/Clients/riic-deployment-pipeline.yml
    ```
 7. Click **Continue**
 8. Review the pipeline
@@ -200,7 +200,7 @@ If above doesn't work:
 
 Before running, update the pipeline file if needed:
 
-**File:** `CAI-pipelines/riic-deployment-pipeline.yml`
+**File:** `CAI-pipelines/Clients/riic-deployment-pipeline.yml`
 
 Find line 34 and ensure service connection name matches:
 ```yaml
@@ -209,7 +209,7 @@ kubernetesServiceConnection: 'RIIC-AKS-Connection'  # Must match what you create
 
 Commit any changes:
 ```bash
-git add CAI-pipelines/riic-deployment-pipeline.yml
+git add CAI-pipelines/Clients/riic-deployment-pipeline.yml
 git commit -m "Update service connection name"
 git push origin riic-environment
 ```

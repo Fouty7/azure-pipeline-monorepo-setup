@@ -154,7 +154,7 @@ Before the pipeline works, set up in Azure DevOps:
    - Add approvals if needed
 
 3. **Create Pipeline**
-   - Point to `CAI-pipelines/riic-deployment-pipeline.yml`
+   - Point to `CAI-pipelines/Clients/riic-deployment-pipeline.yml`
    - Ensure it triggers on `riic-environment` branch
 
 ## 🎯 Best Practices
