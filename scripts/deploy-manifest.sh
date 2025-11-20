@@ -6,7 +6,7 @@
 
 set -e  # Exit on any error
 
-MANIFEST_FILE=${1:-"manifests/riic-release-1.0.yaml"}
+MANIFEST_FILE=${1:-"manifests/riic-release-1.0-test.yaml"}
 NAMESPACE=${2:-"default"}
 
 # Colors for output
