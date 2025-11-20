@@ -1,0 +1,21 @@
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - /Apps/Maestro/Microservices/ModelParameters
+      - /service-deployment-template.yml
+      - /HelmCharts/plain-app-chart
+
+pool:
+  vmImage: 'windows-latest'
+
+extends:
+  template: /service-deployment-template.yml
+  parameters:
+    solutionName: ModelParameters
+    pathToSolutionFolder: Apps/Maestro/Microservices
+    releaseName: modelparameters
+    buildContext: Apps/Maestro/Microservices/ModelParameters
+    secureYml: mycai-modelParam-values.yml

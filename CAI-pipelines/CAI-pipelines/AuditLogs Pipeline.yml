@@ -1,0 +1,21 @@
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - /Apps/Maestro/Microservices/AuditLogs
+      - /service-deployment-template.yml
+      - /HelmCharts/plain-app-chart
+
+pool:
+  vmImage: 'windows-latest'
+
+extends:
+  template: /service-deployment-template.yml
+  parameters:
+    solutionName: AuditLogs
+    pathToSolutionFolder: Apps/Maestro/Microservices
+    releaseName: auditlogsmicroservice
+    buildContext: Apps/Maestro/Microservices/AuditLogs
+    secureYml: mycai-auditLogs-values.yml

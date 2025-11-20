@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-mssql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-mssql
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-mssql
+    spec:
+      securityContext:
+        fsGroup: 10001
+      containers:
+        - name: mssql
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: 1433
+          env:
+            - name: ACCEPT_EULA
+              value: "{{ .Values.mssql.acceptEula }}"
+            - name: SA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-mssql-secret
+                  key: sa-password
+            - name: MSSQL_PID
+              value: "{{ .Values.mssql.edition }}"
+          volumeMounts:
+            - name: mssql-data
+              mountPath: /var/opt/mssql
+      volumes:
+        - name: mssql-data
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-mssql-pvc

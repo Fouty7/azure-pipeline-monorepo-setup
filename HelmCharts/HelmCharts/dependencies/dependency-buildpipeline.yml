@@ -1,0 +1,38 @@
+pool:
+  vmImage: 'windows-latest'
+stages:
+- stage: 
+  displayName: "Dev Deployments"
+  jobs:
+  - deployment: "Nginx"
+    environment:
+      name: "MyCAI Dev"
+      resourceName: "ingress-nginx"
+    strategy:
+        runOnce:
+            deploy:
+                steps:
+                  - task: HelmDeploy@1
+                    inputs:
+                        connectionType: 'Kubernetes Service Connection'
+                        namespace: $(Environment.ResourceName)
+                        command: 'upgrade'
+                        chartType: 'Name'
+                        chartName: 'https://kubernetes.github.io/ingress-nginx/ingress-nginx'
+                        releaseName: 'ingress-nginx'
+  - deployment: "RabbitMq"
+    environment: 
+      name: "MyCAI Dev"
+      resourceName: "dev"
+    strategy:
+        runOnce:
+            deploy:
+                steps:
+                    - task: HelmDeploy@1
+                      inputs:
+                        connectionType: 'Kubernetes Service Connection'
+                        namespace: $(Environment.ResourceName)
+                        command: 'upgrade'
+                        chartType: 'Name'
+                        chartName: 'https://charts.bitnami.com/bitnami/rabbitmq'
+                        releaseName: 'rabbitmq'

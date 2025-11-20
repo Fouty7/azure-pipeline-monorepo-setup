@@ -38,9 +38,8 @@ myfile
 *.trx
 *.coverage
 *.coveragexml
-
-CAI-pipelines/
-HelmCharts/
+#CAI-pipelines/
+#HelmCharts/
 samplecase/
 error
 # NuGet

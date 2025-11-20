@@ -1,0 +1,22 @@
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - /Framework/Microservices/CostManagement
+      - /service-deployment-template.yml
+      - /HelmCharts/plain-app-chart
+
+pool:
+  vmImage: 'windows-latest'
+
+extends:
+  template: /service-deployment-template.yml
+  parameters:
+    solutionName: CostManagement
+    pathToSolutionFolder: Framework/Microservices
+    releaseName: costmanagementmicroservice
+    buildContext: Framework/Microservices/CostManagement 
+    secureYml: mycai-costMgmt-values.yml
+ 

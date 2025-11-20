@@ -1,0 +1,21 @@
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - /Framework/Microservices/Tasks
+      - /service-deployment-template.yml
+      - /HelmCharts/plain-app-chart
+
+pool:
+  vmImage: 'windows-latest'
+
+extends:
+  template: /service-deployment-template.yml
+  parameters:
+    solutionName: Tasks
+    pathToSolutionFolder: Framework/Microservices
+    releaseName: tasksmicroservice
+    buildContext: Framework/Microservices/Tasks    
+    secureYml: mycai-tasks-values.yml

@@ -1,0 +1,5 @@
+apiVersion: v2
+name: mongodb-claimcheck
+description: Custom MongoDB Helm chart for claim check server
+version: 0.1.0
+appVersion: "6.0"

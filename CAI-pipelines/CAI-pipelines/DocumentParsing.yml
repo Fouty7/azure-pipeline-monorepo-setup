@@ -1,0 +1,21 @@
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - Framework/Microservices/DocumentParsing
+      - /python-service-deployment-template.yml
+      - /HelmCharts/plain-app-chart
+
+pool:
+  vmImage: 'windows-latest'
+
+extends:
+  template: /python-service-deployment-template.yml
+  parameters:
+    solutionName: DocumentParsing
+    pathToFolder: Framework/Microservices
+    releaseName: documentparsing
+    buildContext: Framework/Microservices/DocumentParsing
+    secureYml: mycai-docParsing-values.yml

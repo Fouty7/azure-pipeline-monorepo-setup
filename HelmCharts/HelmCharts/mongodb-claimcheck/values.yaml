@@ -1,0 +1,42 @@
+image:
+  repository: mongo
+  tag: "6.0"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 27017
+
+persistence:
+  enabled: true
+  accessMode: ReadWriteOnce
+  size: 10Gi
+  storageClass: default
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+auth:
+  rootUser: admin
+  rootPassword: "changeMe123"
+
+serviceAccount:
+  create: true
+  annotations: {}
+  automount: true
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts: []
+  tls: []
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

@@ -1,0 +1,21 @@
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - /Apps/Maestro/Microservices/Facts
+      - /service-deployment-template.yml
+      - /HelmCharts/plain-app-chart
+
+pool:
+  vmImage: 'windows-latest'
+
+extends:
+  template: /service-deployment-template.yml
+  parameters:
+    solutionName: Facts
+    pathToSolutionFolder: Apps/Maestro/Microservices
+    releaseName: factsmicroservice
+    buildContext: Apps/Maestro/Microservices/Facts
+    secureYml: mycai-facts-values.yml

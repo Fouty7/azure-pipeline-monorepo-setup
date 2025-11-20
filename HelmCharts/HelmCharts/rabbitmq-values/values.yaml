@@ -1,0 +1,27 @@
+auth:
+  username: user
+  password: YourStrongRabbitMQPassword123
+  erlangCookie: SecretErlangCookieABC123
+
+replicaCount: 2
+
+persistence:
+  enabled: true
+  storageClass: ""  # leave empty to use default StorageClass
+  size: 8Gi
+
+resources:
+  requests:
+    memory: 512Mi
+    cpu: 250m
+  limits:
+    cpu: 1000m
+
+metrics:
+  enabled: true
+
+service:
+  type: ClusterIP
+  port: 5672
+
+  # managementPort: 15672  # default already enabled

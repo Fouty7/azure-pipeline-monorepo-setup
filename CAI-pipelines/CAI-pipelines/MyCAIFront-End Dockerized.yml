@@ -1,0 +1,76 @@
+trigger:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+stages:
+  - stage: Dockerize
+    displayName: Dockerize
+    jobs:
+    - job: DockerizeFrontend
+      displayName: Dockerize Frontend
+      steps:
+      - task: npmAuthenticate@0
+        inputs:
+          workingFile: './mycai-frontend/.npmrc'
+  
+      - task: Docker@2
+        displayName: "Docker Build"
+        inputs:
+          repository: Dev/MyCAI/Frontend
+          containerRegistry: 'MyCAI Microservices ACR PROD'
+          command: 'build'
+          dockerfile: './mycai-frontend/Dockerfile'
+          buildContext: ./mycai-frontend
+          tags: $(Build.BuildNumber)
+      - task: Docker@2
+        displayName: "Docker Dev Push"
+        inputs:
+          containerRegistry: 'MyCAI Microservices ACR PROD'
+          repository: 'Dev/MyCAI/Frontend'
+          command: 'push'
+          tags: '$(Build.BuildNumber)'
+      - task: HelmDeploy@1
+        inputs:
+          connectionType: 'Kubernetes Service Connection'
+          kubernetesServiceConnection: 'CAIAKSDev'
+          namespace: 'dev'
+          command: 'upgrade'
+          chartType: 'FilePath'
+          chartPath: './mycai-frontend/frontendchart'
+          releaseName: mycai-frontend-release
+          overrideValues: 'image.repository=mycaimicroervices-enb0gmcyhmgbc5ck.azurecr.io/dev/mycai/frontend,image.tag=$(Build.BuildNumber)'
+          valueFile: './mycai-frontend/values.yml'
+  - stage: ProdDeploy
+    displayName: ProdDeploy
+    trigger: manual
+    jobs:
+    - deployment:
+      environment: 
+        name: 'MyCAI Prod'
+      pool: 
+        vmImage: 'ubuntu-latest'
+      strategy: 
+        runOnce:
+          deploy:
+            steps:
+            - checkout: self
+            - task: DownloadSecureFile@1
+              name: DownloadSecureYml
+              displayName: 'Download CA certificate'
+              inputs:
+                secureFile: mycai-frontend-values.yml
+            - task: HelmDeploy@1
+              inputs:
+                connectionType: 'Kubernetes Service Connection'
+                kubernetesServiceEndpoint: 'cai-aks-prod'
+                namespace: 'prod'
+                command: 'upgrade'
+                chartType: 'FilePath'
+                chartPath: './mycai-frontend/frontendchart'
+                releaseName: mycai-frontend-release
+                overrideValues: 'image.repository=mycaimicroervices-enb0gmcyhmgbc5ck.azurecr.io/dev/mycai/frontend,image.tag=$(Build.BuildNumber)'
+                valueFile: '$(DownloadSecureYml.secureFilePath)'

@@ -1,0 +1,21 @@
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - /Apps/Maestro/Microservices/Assistants
+      - /service-deployment-template.yml
+      - /HelmCharts/plain-app-chart
+
+pool:
+  vmImage: 'windows-latest'
+
+extends:
+  template: /service-deployment-template.yml
+  parameters:
+    solutionName: Assistants
+    pathToSolutionFolder: Apps/Maestro/Microservices
+    releaseName: assistantsmicroservice
+    buildContext: Apps/Maestro/Microservices/Assistants
+    secureYml: mycai-assistant-values.yml

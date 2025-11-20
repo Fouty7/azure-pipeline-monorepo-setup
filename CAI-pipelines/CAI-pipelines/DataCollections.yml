@@ -1,0 +1,21 @@
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - /Apps/Maestro/Microservices/DataCollections
+      - /service-deployment-template.yml
+      - /HelmCharts/plain-app-chart
+
+pool:
+  vmImage: 'windows-latest'
+
+extends:
+  template: /service-deployment-template.yml
+  parameters:
+    solutionName: DataCollections
+    pathToSolutionFolder: Apps/Maestro/Microservices
+    releaseName: datacollectionsmicroservice
+    buildContext: Apps/Maestro/Microservices/DataCollections
+    secureYml: mycai-dataCollections-values.yml

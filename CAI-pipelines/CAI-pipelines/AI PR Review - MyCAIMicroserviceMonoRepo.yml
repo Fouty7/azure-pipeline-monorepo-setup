@@ -1,0 +1,15 @@
+trigger:
+- none
+
+pool:
+  vmImage: ubuntu-latest
+
+resources:
+  repositories:
+    - repository: templates
+      type: git
+      name: 'myCAI/PipelineTemplates'
+      ref: refs/heads/main
+
+extends:
+  template: pr-review-csharp-template.yml@templates

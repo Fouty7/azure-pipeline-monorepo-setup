@@ -1,0 +1,23 @@
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - Framework/Microservices/CodeExecution
+      # FIXME: Migrate back to `/python-service-deployment-template-insecure.yml`
+      # if using container-based execution.
+      - /python-service-deployment-template.yml
+      - /HelmCharts/plain-app-chart
+
+pool:
+  vmImage: 'windows-latest'
+
+extends:
+  template: /python-service-deployment-template.yml
+  parameters:
+    solutionName: CodeExecution
+    pathToFolder: Framework/Microservices
+    releaseName: codeexecutionmicroservice
+    buildContext: Framework/Microservices/CodeExecution
+    secureYml: mycai-codexecution-values.yml
