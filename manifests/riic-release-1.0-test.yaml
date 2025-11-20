@@ -1,0 +1,36 @@
+# RIIC Client Deployment Manifest
+# This file defines what services and versions to deploy to RIIC environment
+# Update image tags here when you want to deploy new versions
+
+release:
+  name: "riic-v1.0"
+  environment: "riic"
+  description: "Initial RIIC production release"
+  
+# List all services to deploy
+services:
+  # Backend API Microservice
+  - name: "backend-api"
+    enabled: true
+    image:
+      repository: "mytestacr690.azurecr.io/dev/backend-api"
+      tag: "BackendAPI-20251116.2"  # ← CHANGE THIS to your backend-api build number
+    helm:
+      chart: "./HelmCharts/HelmCharts/plain-app-chart"
+      releaseName: "backend-api"
+      valuesFile: "services/backend-api/values.yaml"
+      namespace: "default"
+  
+  # Frontend API Microservice
+  - name: "frontend-api"
+    enabled: true
+    image:
+      repository: "mytestacr690.azurecr.io/dev/frontend-api"
+      tag: "FrontendAPI-20251116.6"  # ← CHANGE THIS to your frontend-api build number
+    helm:
+      chart: "./HelmCharts/HelmCharts/plain-app-chart"
+      releaseName: "frontend-api"
+      valuesFile: "services/frontend-api/values.yaml"
+      namespace: "default"
+
+# Add more services as needed following the same pattern
