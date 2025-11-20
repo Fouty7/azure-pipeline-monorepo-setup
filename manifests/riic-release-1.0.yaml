@@ -10,16 +10,16 @@ release:
 # List all services to deploy
 services:
   # Example Microservice 1
-  - name: "templates-microservice"
-    enabled: true  # Set to false to skip deployment
-    image:
-      repository: "mycaimicroervices-enb0gmcyhmgbc5ck.azurecr.io/dev/mycai/apps/maestro/microservices/templates"
-      tag: "20251120.1"  # Change this to deploy different version
-    helm:
-      chart: "./HelmCharts/HelmCharts/plain-app-chart"
-      releaseName: "templatesmicroservice"
-      valuesFile: "Apps/Maestro/Microservices/Templates/values.yaml"
-      namespace: "default"
+  # - name: "templates-microservice"
+  #   enabled: true  # Set to false to skip deployment
+  #   image:
+  #     repository: "mycaimicroervices-enb0gmcyhmgbc5ck.azurecr.io/dev/mycai/apps/maestro/microservices/templates"
+  #     tag: "20251120.1"  # Change this to deploy different version
+  #   helm:
+  #     chart: "./HelmCharts/HelmCharts/plain-app-chart"
+  #     releaseName: "templatesmicroservice"
+  #     valuesFile: "Apps/Maestro/Microservices/Templates/values.yaml"
+  #     namespace: "default"
   
   # Example Microservice 2
   - name: "maestroapi-microservice"
