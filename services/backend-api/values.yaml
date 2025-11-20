@@ -1,4 +1,4 @@
-replicaCount: 2
+replicaCount: 1
 
 image:
   repository: mytestacr690.azurecr.io/dev/mycai/sample-apps/backend-api
