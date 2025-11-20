@@ -1,0 +1,21 @@
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - Framework/Microservices/ResponseGeneration
+      - /python-service-deployment-template.yml
+      - /HelmCharts/plain-app-chart
+
+pool:
+  vmImage: 'windows-latest'
+
+extends:
+  template: /python-service-deployment-template.yml
+  parameters:
+    solutionName: ResponseGeneration
+    pathToFolder: Framework/Microservices
+    releaseName: responsegenerationmicroservice
+    buildContext: Framework/Microservices/ResponseGeneration
+    secureYml: mycai-respGen-values.yml

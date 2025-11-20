@@ -1,0 +1,155 @@
+parameters:
+- name: solutionName # name of the parameter; required
+  type: string # data type of the parameter; required
+- name: pathToSolutionFolder # name of the parameter; required
+  type: string # data type of the parameter; required
+- name: releaseName # name of the parameter; required
+  type: string # data type of the parameter; required
+- name: buildContext
+  type: string
+
+- name: acrUrl # name of the parameter; required
+  type: string # data type of the parameter; required
+  default: 'mycaimicroervices-enb0gmcyhmgbc5ck.azurecr.io'
+- name: buildConfiguration # name of the parameter; required
+  type: string # data type of the parameter; required
+  default: 'Release'
+- name: secureYml # name of the parameter; required
+  type: string # data type of the parameter; required
+  default: ''
+
+# trigger:
+#   branches:
+#     include:
+#       - main
+#   paths:
+#     include:
+#       - './service-deployment-template.yml'
+#       - './HelmCharts/plain-app-chart'
+
+variables:
+  buildConfiguration: ${{ parameters.buildConfiguration }}
+  solutionName: ${{ parameters.solutionName }} # Set your solution name here
+  imgName: ${{ lower(parameters.solutionName) }}
+  pathToSolutionFolder: ${{ parameters.pathToSolutionFolder }}
+  imgPrecursor: ${{ lower(parameters.pathToSolutionFolder) }}
+  acrUrl: ${{ parameters.acrUrl }}
+
+stages:
+- stage: BuildAndTest
+  displayName: Build and Test
+  jobs:
+  - job: BuildAndTestMicroservice
+    displayName: Build and Test Microservice
+    steps:
+    - task: UseDotNet@2
+      inputs:
+        packageType: 'sdk'
+        version: '8.x'
+        installationPath: $(Agent.ToolsDirectory)\dotnet
+        
+    - task: DotNetCoreCLI@2
+      displayName: Restore
+      inputs:
+        command: restore
+        projects: '**/$(solutionName).sln'
+        feedsToUse: config
+        nugetConfigPath: '$(pathToSolutionFolder)/$(solutionName)/nuget.config'
+        externalFeedCredentials: 'CAI Technology Solutions Packages'
+        verbosityRestore: Detailed
+        verbosityPack: Detailed
+        
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: 'build'
+        projects: '**/$(solutionName).sln'
+        arguments: '--configuration $(buildConfiguration)'
+
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: 'test'
+        projects: '**/$(solutionName).sln'
+        arguments: '--configuration $(buildConfiguration) --no-build --logger trx'
+
+    - task: PublishTestResults@2
+      inputs:
+        testResultsFormat: 'VSTest'
+        testResultsFiles: '**/*.trx'
+        mergeTestResults: true
+        failTaskOnFailedTests: true
+- stage: Dockerize
+  displayName: Dockerize
+  dependsOn: BuildAndTest
+  jobs:
+  - job: DockerizeMicroservice
+    displayName: DockerizeMicroservice
+    pool: 
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: NuGetAuthenticate@1
+      inputs:
+        nuGetServiceConnections: 'CAI Technology Solutions Packages' # Name of the service connection
+
+    - task: Docker@2
+      displayName: "Docker Build"
+      inputs:
+        repository: 'Dev/MyCAI/$(pathToSolutionFolder)/$(solutionName)'
+        containerRegistry: 'MyCAI Microservices ACR PROD'
+        command: 'build'
+        dockerfile: '$(pathToSolutionFolder)/$(solutionName)/Dockerfile'
+        buildContext: ${{ parameters.buildContext }}
+        arguments: "--build-arg NUGETUN=Anon --build-arg NUGETPW=$(VSS_NUGET_ACCESSTOKEN)"
+        tags: $(Build.BuildNumber)
+    - task: Docker@2
+      displayName: "Docker Dev Push"
+      inputs:
+        containerRegistry: 'MyCAI Microservices ACR PROD'
+        repository: 'Dev/MyCAI/$(pathToSolutionFolder)/$(solutionName)'
+        command: 'push'
+        tags: '$(Build.BuildNumber)'
+    - task: HelmDeploy@1
+      inputs:
+        connectionType: 'Kubernetes Service Connection'
+        kubernetesServiceConnection: 'CAIAKSDev'
+        namespace: 'dev'
+        command: 'upgrade'
+        chartType: 'FilePath'
+        chartPath: './HelmCharts/plain-app-chart'
+        releaseName: ${{ parameters.releaseName }}
+        overrideValues: 'image.repository=$(acrUrl)/dev/mycai/$(imgPrecursor)/$(imgName),image.tag=$(Build.BuildNumber)'
+        valueFile: '$(pathToSolutionFolder)/$(solutionName)/values.yaml'
+    
+- stage: ProdDeploy
+  displayName: ProdDeploy
+  trigger: manual
+  jobs:
+  - deployment:
+    environment: 
+      name: 'MyCAI Prod'
+    pool: 
+      vmImage: 'ubuntu-latest'
+    strategy: 
+      runOnce:
+        deploy:
+          steps:
+          - checkout: self
+          - task: DownloadSecureFile@1
+            name: DownloadSecureYml
+            condition: ne('${{ parameters.secureYml }}', '')
+            displayName: 'Download CA certificate'
+            inputs:
+              secureFile: ${{ parameters.secureYml }}
+          - task: HelmDeploy@1
+            inputs:
+              connectionType: 'Kubernetes Service Connection'
+              kubernetesServiceEndpoint: 'cai-aks-prod'
+              namespace: 'prod'
+              command: 'upgrade'
+              chartType: 'FilePath'
+              chartPath: './HelmCharts/plain-app-chart'
+              releaseName: ${{ parameters.releaseName }}
+              overrideValues: 'image.repository=$(acrUrl)/dev/mycai/$(imgPrecursor)/$(imgName),image.tag=$(Build.BuildNumber)'
+              ${{ if ne('parameters.secureYml', '') }}:
+                valueFile: '$(DownloadSecureYml.secureFilePath)'
+              ${{ else }}:
+                valueFile: '$(pathToSolutionFolder)/$(solutionName)/values.yaml'

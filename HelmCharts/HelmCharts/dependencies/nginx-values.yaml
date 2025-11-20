@@ -1,0 +1,6 @@
+controller:
+  config:
+    client-header-buffer-size: "64k"
+    large-client-header-buffers: "4 64k"
+  extraArgs:
+    default-ssl-certificate: "dev/api-devmy-tls"

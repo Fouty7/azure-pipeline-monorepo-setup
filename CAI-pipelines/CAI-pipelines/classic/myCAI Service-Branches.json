@@ -1,0 +1,39 @@
+{
+  "id": 70,
+  "name": "myCAI Service-Branches",
+  "queue": {
+    "_links": {
+      "self": {
+        "href": "https://dev.azure.com/CAI-Technology-Solutions/_apis/build/Queues/117"
+      }
+    },
+    "id": 117,
+    "name": "Azure Pipelines",
+    "url": "https://dev.azure.com/CAI-Technology-Solutions/_apis/build/Queues/117",
+    "pool": {
+      "id": 9,
+      "name": "Azure Pipelines",
+      "isHosted": true
+    }
+  },
+  "repository": {
+    "properties": {
+      "cleanOptions": "0",
+      "labelSources": "0",
+      "labelSourcesFormat": "$(build.buildNumber)",
+      "reportBuildStatus": "true",
+      "fetchDepth": "1",
+      "gitLfsSupport": "false",
+      "skipSyncSource": "false",
+      "checkoutNestedSubmodules": "false"
+    },
+    "id": "0f9f1baa-af44-4c7b-9797-c3e95b5478c1",
+    "type": "TfsGit",
+    "name": "myCAI API",
+    "url": "https://dev.azure.com/CAI-Technology-Solutions/myCAI/_git/myCAI%20API",
+    "defaultBranch": "refs/heads/main",
+    "clean": "false",
+    "checkoutSubmodules": false
+  },
+  "process": 1
+}

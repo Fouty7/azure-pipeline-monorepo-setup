@@ -1,0 +1,22 @@
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - /Framework/Api/MyCAI.Framework.Api
+      - /Framework/Models/MyCAI.Framework.Models.LegacyApi
+      - /service-deployment-template.yml
+      - /HelmCharts/plain-app-chart
+
+pool:
+  vmImage: 'windows-latest'
+
+extends:
+  template: /service-deployment-template.yml
+  parameters:
+    solutionName: MyCAI.Framework.Api
+    pathToSolutionFolder: Framework/Api
+    releaseName: mycaiframeworkapi
+    buildContext: Framework
+    secureYml: mycai-frameworkApi-values.yml

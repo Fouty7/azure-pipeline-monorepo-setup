@@ -1,0 +1,21 @@
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - /Framework/Microservices/Notifications
+      - /service-deployment-template.yml
+      - /HelmCharts/plain-app-chart
+
+pool:
+  vmImage: 'windows-latest'
+
+extends:
+  template: /service-deployment-template.yml
+  parameters:
+    solutionName: Notifications
+    pathToSolutionFolder: Framework/Microservices
+    releaseName: notificationsmicroservice
+    buildContext: Framework/Microservices/Notifications
+    secureYml: mycai-notifications-values.yml

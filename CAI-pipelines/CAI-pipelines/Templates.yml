@@ -1,0 +1,21 @@
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - /Apps/Maestro/Microservices/Templates
+      - /service-deployment-template.yml
+      - /HelmCharts/plain-app-chart
+
+pool:
+  vmImage: 'windows-latest'
+
+extends:
+  template: /service-deployment-template.yml
+  parameters:
+    solutionName: Templates
+    pathToSolutionFolder: Apps/Maestro/Microservices
+    releaseName: templatesmicroservice
+    buildContext: Apps/Maestro/Microservices/Templates
+    secureYml: mycai-templates-values.yml

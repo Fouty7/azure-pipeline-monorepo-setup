@@ -1,0 +1,75 @@
+variables:
+  Parameters.solution: '**/*.sln'
+  major-minor: '1.0'
+  patch: '0'
+  BuildPlatform: 'Any CPU'
+  BuildConfiguration: 'Release'
+  system.defaultworkingdirectory: '$(System.DefaultWorkingDirectory)'
+  build.artifactstagingdirectory: '$(Build.ArtifactStagingDirectory)'
+
+pool:
+  name: Azure Pipelines
+  vmImage: windows-2022
+  demands:
+  - msbuild
+  - visualstudio
+  - vstest
+
+trigger:
+- main
+
+steps:
+- task: UseDotNet@2
+  displayName: 'Use .NET Core sdk 8.x'
+  inputs:
+    version: 8.x
+    performMultiLevelLookup: true
+
+- task: NuGetToolInstaller@0
+  displayName: 'Use NuGet 6.1.0'
+  inputs:
+    versionSpec: 6.1.0
+
+- task: NuGetCommand@2
+  displayName: 'NuGet restore'
+  inputs:
+    restoreSolution: '$(Parameters.solution)'
+    vstsFeed: '6be2d7b6-0932-4b17-a046-23bc0b7cc9e7'
+
+- task: VSBuild@1
+  displayName: 'Build solution *.sln'
+  inputs:
+    solution: '$(Parameters.solution)'
+    msbuildArgs: '-property:Version=$(major-minor).$(patch)'
+    platform: '$(BuildPlatform)'
+    configuration: '$(BuildConfiguration)'
+
+- task: VSTest@2
+  displayName: 'VsTest - testAssemblies'
+  inputs:
+    testAssemblyVer2: |
+     **\$(BuildConfiguration)\**\*[Tt]ests*.dll
+     !**\obj\**
+    platform: '$(BuildPlatform)'
+    configuration: '$(BuildConfiguration)'
+
+- task: PublishSymbols@2
+  displayName: 'Publish symbols path'
+  inputs:
+    SearchPattern: '**\bin\**\*.pdb'
+    PublishSymbols: false
+  continueOnError: true
+
+- task: CopyFiles@2
+  displayName: 'Copy Files to: $(build.artifactstagingdirectory)'
+  inputs:
+    SourceFolder: '$(system.defaultworkingdirectory)'
+    Contents: '**'
+    TargetFolder: '$(build.artifactstagingdirectory)'
+  condition: succeededOrFailed()
+
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Artifact: drop'
+  inputs:
+    PathtoPublish: '$(build.artifactstagingdirectory)'
+  condition: succeededOrFailed()

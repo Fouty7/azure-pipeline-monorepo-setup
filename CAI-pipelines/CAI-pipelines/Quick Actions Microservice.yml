@@ -1,0 +1,21 @@
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - /Apps/Maestro/Microservices/QuickActions
+      - /service-deployment-template.yml
+      - /HelmCharts/plain-app-chart
+
+pool:
+  vmImage: 'windows-latest'
+
+extends:
+  template: /service-deployment-template.yml
+  parameters:
+    solutionName: QuickActions
+    pathToSolutionFolder: Apps/Maestro/Microservices
+    releaseName: quickactionsmicroservice
+    buildContext: Apps/Maestro/Microservices/QuickActions
+    secureYml: mycai-quickActions-values.yml

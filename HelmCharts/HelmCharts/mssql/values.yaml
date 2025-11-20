@@ -1,0 +1,26 @@
+image:
+  repository: mcr.microsoft.com/mssql/server
+  tag: 2022-latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 1433
+
+mssql:
+  saPassword: "YourStrong!Passw0rd"
+  edition: "Developer"
+  acceptEula: "Y"
+
+persistence:
+  enabled: true
+  storageClass: "defaultretain"
+  size: 8Gi
+
+resources:
+  limits:
+    memory: "2Gi"
+    cpu: "1"
+  requests:
+    memory: "2Gi"
+    cpu: "0.5"

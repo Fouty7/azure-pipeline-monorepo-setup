@@ -1,0 +1,33 @@
+primary:
+  image:
+    repository: pgvector/pgvector
+    tag: "0.8.0-pg17-bookworm"
+    pullPolicy: IfNotPresent
+    
+ingress:
+  enabled: false
+
+service:
+  port: 5432
+  type: ClusterIP
+
+env:
+  - name: POSTGRES_PASSWORD
+    value: "YourStrong!Passw0rd"
+  - name: PGDATA
+    value: "/var/lib/postgresql/data/pgdata/pgdata"
+
+persistence:
+  enabled: true
+  mountPath: /var/lib/postgresql/data/pgdata
+  storageClassName: defaultretain
+  accessModes:
+    - ReadWriteOnce
+  size: 8Gi
+
+resources:
+  limits:
+    memory: "2Gi"
+  requests:
+    memory: "500Mi"
+    cpu: "0.25"

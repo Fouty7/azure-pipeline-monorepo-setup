@@ -1,0 +1,194 @@
+# RIIC Client Deployment Pipeline
+# Triggered when changes are pushed to riic-environment branch
+# Deploys services based on manifest file
+
+trigger:
+  branches:
+    include:
+      - riic-environment  # Triggers when you push to this branch
+  paths:
+    include:
+      - manifests/riic-release-1.0.yaml  # Only trigger if manifest changes
+      - CAI-pipelines/Clients/riic-deployment-pipeline.yml  # Or if pipeline changes
+
+# No PR triggers - only direct pushes to riic-environment
+pr: none
+
+parameters:
+- name: manifestFile
+  displayName: 'Manifest File to Deploy'
+  type: string
+  default: 'manifests/riic-release-1.0.yaml'
+- name: namespace
+  displayName: 'Kubernetes Namespace'
+  type: string
+  default: 'default'
+- name: dryRun
+  displayName: 'Dry Run (Preview Only)'
+  type: boolean
+  default: false
+
+variables:
+  manifestFile: ${{ parameters.manifestFile }}
+  namespace: ${{ parameters.namespace }}
+  kubernetesServiceConnection: 'RIIC-AKS-Connection'  # Update with your actual service connection name
+  
+pool:
+  vmImage: 'ubuntu-latest'
+
+stages:
+- stage: ValidateManifest
+  displayName: 'Validate Manifest'
+  jobs:
+  - job: ValidateManifestJob
+    displayName: 'Check Manifest File'
+    steps:
+    - checkout: self
+    
+    - task: Bash@3
+      displayName: 'Install yq (YAML Parser)'
+      inputs:
+        targetType: 'inline'
+        script: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+          yq --version
+    
+    - task: Bash@3
+      displayName: 'Validate Manifest Structure'
+      inputs:
+        targetType: 'inline'
+        script: |
+          echo "Validating manifest: $(manifestFile)"
+          
+          # Check if file exists
+          if [ ! -f "$(manifestFile)" ]; then
+            echo "ERROR: Manifest file not found!"
+            exit 1
+          fi
+          
+          # Validate YAML syntax
+          if ! yq eval '.' "$(manifestFile)" > /dev/null 2>&1; then
+            echo "ERROR: Invalid YAML syntax!"
+            exit 1
+          fi
+          
+          # Check required fields
+          RELEASE_NAME=$(yq eval '.release.name' "$(manifestFile)")
+          SERVICE_COUNT=$(yq eval '.services | length' "$(manifestFile)")
+          
+          echo "✓ Manifest is valid"
+          echo "  Release: $RELEASE_NAME"
+          echo "  Services: $SERVICE_COUNT"
+          
+          # Display services to be deployed
+          echo ""
+          echo "Services to deploy:"
+          for i in $(seq 0 $((SERVICE_COUNT - 1))); do
+            NAME=$(yq eval ".services[$i].name" "$(manifestFile)")
+            ENABLED=$(yq eval ".services[$i].enabled" "$(manifestFile)")
+            TAG=$(yq eval ".services[$i].image.tag" "$(manifestFile)")
+            
+            if [ "$ENABLED" = "true" ]; then
+              if [ "$TAG" != "null" ]; then
+                echo "  ✓ $NAME (version: $TAG)"
+              else
+                echo "  ✓ $NAME (dependency)"
+              fi
+            else
+              echo "  ⊘ $NAME (disabled)"
+            fi
+          done
+
+- stage: DeployToRIIC
+  displayName: 'Deploy to RIIC'
+  dependsOn: ValidateManifest
+  condition: succeeded()
+  jobs:
+  - deployment: DeployServices
+    displayName: 'Deploy Services via Manifest'
+    environment: 'RIIC-Production'  # Create this environment in Azure DevOps
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - checkout: self
+          
+          - task: HelmInstaller@1
+            displayName: 'Install Helm'
+            inputs:
+              helmVersionToInstall: 'latest'
+          
+          - task: Bash@3
+            displayName: 'Install yq'
+            inputs:
+              targetType: 'inline'
+              script: |
+                sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+                sudo chmod +x /usr/local/bin/yq
+          
+          - task: Kubernetes@1
+            displayName: 'Set Kubernetes Context (RIIC)'
+            inputs:
+              connectionType: 'Kubernetes Service Connection'
+              kubernetesServiceEndpoint: '$(kubernetesServiceConnection)'
+              command: 'login'
+          
+          - task: Bash@3
+            displayName: 'Deploy Services from Manifest'
+            inputs:
+              targetType: 'filePath'
+              filePath: './scripts/deploy-manifest.sh'
+              arguments: '$(manifestFile) $(namespace)'
+            env:
+              KUBECONFIG: $(KUBECONFIG)
+          
+          - task: Bash@3
+            displayName: 'Verify Deployments'
+            inputs:
+              targetType: 'inline'
+              script: |
+                echo "Checking deployed services..."
+                kubectl get pods -n $(namespace)
+                echo ""
+                echo "Checking services..."
+                kubectl get svc -n $(namespace)
+
+- stage: HealthCheck
+  displayName: 'Health Check'
+  dependsOn: DeployToRIIC
+  condition: succeeded()
+  jobs:
+  - job: VerifyDeployment
+    displayName: 'Verify Services are Running'
+    steps:
+    - task: Kubernetes@1
+      displayName: 'Connect to RIIC Cluster'
+      inputs:
+        connectionType: 'Kubernetes Service Connection'
+        kubernetesServiceEndpoint: '$(kubernetesServiceConnection)'
+        command: 'login'
+    
+    - task: Bash@3
+      displayName: 'Check Pod Health'
+      inputs:
+        targetType: 'inline'
+        script: |
+          echo "Waiting 30 seconds for pods to stabilize..."
+          sleep 30
+          
+          echo "Pod Status:"
+          kubectl get pods -n $(namespace)
+          
+          # Check if any pods are not running
+          NOT_RUNNING=$(kubectl get pods -n $(namespace) --no-headers | grep -v "Running\|Completed" | wc -l)
+          
+          if [ $NOT_RUNNING -gt 0 ]; then
+            echo ""
+            echo "WARNING: Some pods are not in Running state!"
+            kubectl get pods -n $(namespace) | grep -v "Running\|Completed"
+            exit 1
+          else
+            echo ""
+            echo "✓ All pods are running successfully!"
+          fi

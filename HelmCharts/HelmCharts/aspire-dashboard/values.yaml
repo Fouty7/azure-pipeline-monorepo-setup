@@ -1,0 +1,28 @@
+replicaCount: 1
+image:
+  repository: mcr.microsoft.com/dotnet/aspire-dashboard
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  name: aspire-dashboard
+  type: ClusterIP
+  ports:
+    - name: dashboard
+      port: 18888
+      targetPort: 18888
+    - name: otlp-grpc
+      port: 18889
+      targetPort: 18889
+    - name: otlp-http
+      port: 18890
+      targetPort: 18890
+    
+env:
+  - name: ASPIRE_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS
+    value: "true"
+
+resources:
+  requests:
+    memory: "200Mi"
+    cpu: "0.1"

@@ -1,0 +1,21 @@
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - Framework/Microservices/WebUtils
+      - /python-service-deployment-template.yml
+      - /HelmCharts/plain-app-chart
+
+pool:
+  vmImage: 'windows-latest'
+
+extends:
+  template: /python-service-deployment-template.yml
+  parameters:
+    solutionName: WebUtils
+    pathToFolder: Framework/Microservices
+    releaseName: webutilsmicroservice
+    buildContext: Framework/Microservices/WebUtils
+    secureYml: mycai-webUtils-values.yml
